@@ -61,6 +61,115 @@ export function dbcProgramSha256(): string {
  * remaining room on the curve, so the program has to stop at the migration
  * price and hand back the unconsumed input.
  */
+async function runLaunch(options: {
+  name: string
+  description: string
+  seed: string
+  symbol: string
+  dynamicFee: boolean
+  /** Seconds to advance before each swap after the first. */
+  gaps: readonly bigint[]
+  buys: readonly bigint[]
+  finalAmount: bigint
+}): Promise<OracleFixture> {
+  const oracle = await DbcOracle.create({ seed: options.seed })
+  const configParams = baselineConfig({ dynamicFee: options.dynamicFee })
+
+  const config = await oracle.createConfig(configParams)
+  const handle = await oracle.createPool(config, {
+    name: options.name,
+    symbol: options.symbol,
+    uri: `https://example.invalid/${options.symbol.toLowerCase()}.json`,
+  })
+  await oracle.fundQuote(oracle.payer.publicKey, 1_000n * 1_000_000_000n)
+
+  const initialPoolState = toJson(await oracle.poolState(handle.pool))
+  const swaps: SwapRecord[] = []
+
+  const record = (
+    kind: SwapRecord['kind'],
+    amountIn: bigint,
+    observation: Awaited<ReturnType<DbcOracle['swap']>>,
+  ): void => {
+    swaps.push({
+      step: swaps.length,
+      kind,
+      swapBaseForQuote: false,
+      amountIn: amountIn.toString(),
+      clock: {
+        slot: observation.clock.slot.toString(),
+        unixTimestamp: observation.clock.unixTimestamp.toString(),
+      },
+      event: toJson(observation.event),
+      legacyEvent: toJson(observation.legacyEvent),
+      poolStateAfter: toJson(observation.poolStateAfter),
+    })
+  }
+
+  for (const [index, amountIn] of options.buys.entries()) {
+    const gap = options.gaps[index]
+    if (gap !== undefined && gap > 0n) oracle.advanceSeconds(gap)
+    record('exactIn', amountIn, await oracle.swap(handle, { amountIn, swapBaseForQuote: false }))
+  }
+
+  const lastGap = options.gaps[options.buys.length]
+  if (lastGap !== undefined && lastGap > 0n) oracle.advanceSeconds(lastGap)
+  record(
+    'partialFill',
+    options.finalAmount,
+    await oracle.swapPartialFill(handle, {
+      amountIn: options.finalAmount,
+      swapBaseForQuote: false,
+    }),
+  )
+
+  return {
+    name: options.seed.split('/').at(-1) ?? options.seed,
+    description: options.description,
+    programId: oracle.programId,
+    programSha256: dbcProgramSha256(),
+    seed: options.seed,
+    quoteDecimals: oracle.quoteDecimals,
+    configParams: toJson(configParams),
+    configAccount: toJson(await oracle.configState(config)),
+    initialPoolState,
+    swaps,
+  }
+}
+
+/**
+ * The same curve with the volatility-driven dynamic fee switched on.
+ *
+ * The gaps between trades are chosen to walk every branch of the tracker's
+ * decay rule: one trade inside the 10-second filter period (references must not
+ * move), one between the filter and decay periods (volatility decays toward its
+ * reference), and one past the 120-second decay period (the reference resets to
+ * zero). Without that spread the tracker would stay at zero and the fee it
+ * drives would never be exercised.
+ *
+ * One buy is also small enough not to cross a bin, because the tracker only
+ * advances its last-update timestamp when a trade moves the price a full bin.
+ */
+export async function buildDynamicFeeFixture(): Promise<OracleFixture> {
+  return runLaunch({
+    name: 'Preflight Dynamic Fee',
+    symbol: 'PFD',
+    seed: 'preflight/dynamic-fee',
+    dynamicFee: true,
+    description:
+      'Same two-segment curve as the baseline with the volatility-driven ' +
+      'dynamic fee enabled. Trade gaps cross the filter period, the decay ' +
+      'period, and beyond, so the volatility tracker is exercised rather than ' +
+      'left at zero.',
+    gaps: [0n, 2n, 15n, 30n, 300n, 45n],
+    // The third buy is deliberately tiny: it moves the price by less than one
+    // bin, so the tracker must NOT advance its last-update timestamp. A launch
+    // made only of ordinary-sized trades never reaches that branch.
+    buys: [1_000_000_000n, 5_000_000_000n, 1_000_000n, 12_000_000_000n, 20_000_000_000n],
+    finalAmount: 40n * 1_000_000_000n,
+  })
+}
+
 export async function buildBaselineFixture(): Promise<OracleFixture> {
   const seed = 'preflight/baseline'
   const oracle = await DbcOracle.create({ seed })

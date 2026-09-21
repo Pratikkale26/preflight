@@ -36,6 +36,11 @@ export interface BaselineOptions {
   readonly migrationQuoteThreshold?: number
   /** Total supply of the launched token. */
   readonly totalTokenSupply?: number
+  /**
+   * Enable the volatility-driven dynamic fee on top of the base fee. Off by
+   * default so the baseline recording isolates curve mechanics.
+   */
+  readonly dynamicFee?: boolean
 }
 
 /**
@@ -66,7 +71,7 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
           totalDuration: 0,
         },
       },
-      dynamicFeeEnabled: false,
+      dynamicFeeEnabled: options.dynamicFee ?? false,
       collectFeeMode: CollectFeeMode.QuoteToken,
       creatorTradingFeePercentage: 0,
       poolCreationFee: 0,

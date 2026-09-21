@@ -18,12 +18,17 @@ import type { OracleFixture } from '../../src/oracle/fixtures.js'
  * right about fees and prices is not useful for deciding how to launch a token.
  */
 
-const fixture = JSON.parse(
-  readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../../fixtures/oracle/baseline.json'),
-    'utf8',
-  ),
-) as OracleFixture
+const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '../../fixtures/oracle')
+const load = (name: string): OracleFixture =>
+  JSON.parse(readFileSync(join(fixtureDir, `${name}.json`), 'utf8')) as OracleFixture
+
+/**
+ * `baseline` isolates curve and fee-schedule mechanics. `dynamic-fee` adds the
+ * volatility-driven fee, with trade gaps that cross the filter and decay
+ * periods, so the tracker's state machine is exercised rather than sitting at
+ * zero.
+ */
+const FIXTURES = ['baseline', 'dynamic-fee'] as const
 
 /** The field-by-field comparison, named so failures say which number is wrong. */
 const SWAP_RESULT_FIELDS = [
@@ -35,6 +40,13 @@ const SWAP_RESULT_FIELDS = [
   'tradingFee',
   'protocolFee',
   'referralFee',
+] as const
+
+const VOLATILITY_FIELDS = [
+  'lastUpdateTimestamp',
+  'sqrtPriceReference',
+  'volatilityAccumulator',
+  'volatilityReference',
 ] as const
 
 const POOL_FIELDS = [
@@ -49,7 +61,9 @@ const POOL_FIELDS = [
   'creatorQuoteFee',
 ] as const
 
-describe('engine vs deployed program', () => {
+describe.each(FIXTURES)('engine vs deployed program: %s', (name) => {
+  const fixture = load(name)
+
   it('replays every recorded swap bit-exactly', () => {
     const config = decodeConfig(fixture.configAccount)
     const pool = new VirtualPool(config, decodePoolState(fixture.initialPoolState))
@@ -73,6 +87,14 @@ describe('engine vs deployed program', () => {
         expect(stateAfter[field], `swap ${swap.step} (${swap.kind}): pool.${field}`).toBe(
           expectedState[field],
         )
+      }
+      // The volatility tracker drives the dynamic fee, so its own state has to
+      // match too — a tracker that drifts would charge the wrong fee later.
+      for (const field of VOLATILITY_FIELDS) {
+        expect(
+          stateAfter.volatilityTracker[field],
+          `swap ${swap.step} (${swap.kind}): volatilityTracker.${field}`,
+        ).toBe(expectedState.volatilityTracker[field])
       }
     }
   })
