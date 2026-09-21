@@ -28,7 +28,15 @@ const BASIS_POINT_MAX = 10_000n
 /** Q64.64 one. */
 const ONE_Q64 = 1n << 64n
 
-/** Mirrors the program's `safe_sub`: underflow is an error, never a wrap. */
+/**
+ * Mirrors the program's `safe_sub`: underflow is an error, never a wrap.
+ *
+ * This is belt and braces. In practice a partial fill caps the trade at what
+ * the curve can absorb, and an exact fill is rejected before it gets here, so
+ * the guard has no known reachable path — which is exactly why it stays. An
+ * arithmetic slip that silently wrapped a reserve would be far worse than one
+ * that stops.
+ */
 function safeSub(a: bigint, b: bigint, what: string): bigint {
   const result = a - b
   if (result < 0n) {

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 
 import { decodeConfig, decodePoolState } from '../../src/engine/decode.js'
 import { VirtualPool } from '../../src/engine/pool.js'
-import { TradeDirection } from '../../src/engine/types.js'
 import type { OracleFixture } from '../../src/oracle/fixtures.js'
 
 /**
@@ -186,7 +185,7 @@ describe('engine properties', () => {
         const sellAmount = amount > baseHeld ? baseHeld : amount
         if (sellAmount === 0n) return
 
-        const { result, stateAfter } = pool.swap(sellAmount, TradeDirection.BaseToQuote, {
+        const { result, stateAfter } = pool.sell(sellAmount, {
           currentPoint: 1_767_225_700n,
           currentTimestamp: 1_767_225_700n,
           partialFill: true,

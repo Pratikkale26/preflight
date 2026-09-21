@@ -29,7 +29,7 @@ const load = (name: string): OracleFixture =>
  * periods, so the tracker's state machine is exercised rather than sitting at
  * zero.
  */
-const FIXTURES = ['baseline', 'dynamic-fee'] as const
+const FIXTURES = ['baseline', 'dynamic-fee', 'output-fee'] as const
 
 /** The field-by-field comparison, named so failures say which number is wrong. */
 const SWAP_RESULT_FIELDS = [

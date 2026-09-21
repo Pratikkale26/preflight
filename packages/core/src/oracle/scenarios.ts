@@ -41,6 +41,17 @@ export interface BaselineOptions {
    * default so the baseline recording isolates curve mechanics.
    */
   readonly dynamicFee?: boolean
+  /**
+   * Where the fee is taken. `QuoteToken` takes it on the way in when buying;
+   * `OutputToken` takes it out of the token being bought, which credits the
+   * base-token fee buckets instead of the quote ones.
+   */
+  readonly collectFeeMode?: CollectFeeMode
+  /**
+   * Share of the trading fee routed to the launch creator rather than the
+   * partner, as a percentage. Zero means the partner takes all of it.
+   */
+  readonly creatorTradingFeePercentage?: number
 }
 
 /**
@@ -72,8 +83,8 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
         },
       },
       dynamicFeeEnabled: options.dynamicFee ?? false,
-      collectFeeMode: CollectFeeMode.QuoteToken,
-      creatorTradingFeePercentage: 0,
+      collectFeeMode: options.collectFeeMode ?? CollectFeeMode.QuoteToken,
+      creatorTradingFeePercentage: options.creatorTradingFeePercentage ?? 0,
       poolCreationFee: 0,
       enableFirstSwapWithMinFee: false,
     },

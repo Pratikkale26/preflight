@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildBaselineFixture,
   buildDynamicFeeFixture,
+  buildOutputFeeFixture,
   dbcProgramSha256,
   type OracleFixture,
 } from '../../src/oracle/fixtures.js'
@@ -18,6 +19,7 @@ const pathFor = (name: string): string => join(fixtureDir, `${name}.json`)
 const RECORDINGS = [
   { file: 'baseline', build: buildBaselineFixture },
   { file: 'dynamic-fee', build: buildDynamicFeeFixture },
+  { file: 'output-fee', build: buildOutputFeeFixture },
 ] as const
 
 /**

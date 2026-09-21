@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 
 import { DbcOracle } from './harness.js'
 import { loadProgramManifest, programBytecodePath } from './programs.js'
+import { CollectFeeMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
+
 import { baselineConfig } from './scenarios.js'
 import { type Json, toJson } from './serialize.js'
 
@@ -67,13 +69,21 @@ async function runLaunch(options: {
   seed: string
   symbol: string
   dynamicFee: boolean
+  collectFeeMode?: CollectFeeMode
+  creatorTradingFeePercentage?: number
   /** Seconds to advance before each swap after the first. */
   gaps: readonly bigint[]
   buys: readonly bigint[]
   finalAmount: bigint
 }): Promise<OracleFixture> {
   const oracle = await DbcOracle.create({ seed: options.seed })
-  const configParams = baselineConfig({ dynamicFee: options.dynamicFee })
+  const configParams = baselineConfig({
+    dynamicFee: options.dynamicFee,
+    ...(options.collectFeeMode !== undefined ? { collectFeeMode: options.collectFeeMode } : {}),
+    ...(options.creatorTradingFeePercentage !== undefined
+      ? { creatorTradingFeePercentage: options.creatorTradingFeePercentage }
+      : {}),
+  })
 
   const config = await oracle.createConfig(configParams)
   const handle = await oracle.createPool(config, {
@@ -166,6 +176,33 @@ export async function buildDynamicFeeFixture(): Promise<OracleFixture> {
     // bin, so the tracker must NOT advance its last-update timestamp. A launch
     // made only of ordinary-sized trades never reaches that branch.
     buys: [1_000_000_000n, 5_000_000_000n, 1_000_000n, 12_000_000_000n, 20_000_000_000n],
+    finalAmount: 40n * 1_000_000_000n,
+  })
+}
+
+/**
+ * Fees taken out of the token being bought, and split with the creator.
+ *
+ * Both settings change where money ends up rather than how the curve moves, and
+ * both are invisible to a launch configured the usual way: quote-token fees
+ * never credit the base-token buckets, and a zero creator share never exercises
+ * the split arithmetic. A launcher who changes either would otherwise be the
+ * first person to run that code.
+ */
+export async function buildOutputFeeFixture(): Promise<OracleFixture> {
+  return runLaunch({
+    name: 'Preflight Output Fee',
+    symbol: 'PFO',
+    seed: 'preflight/output-fee',
+    dynamicFee: false,
+    collectFeeMode: CollectFeeMode.OutputToken,
+    creatorTradingFeePercentage: 40,
+    description:
+      'Fees collected in the output token and split 40/60 between creator and ' +
+      'partner, so the base-token fee buckets and the creator split are both ' +
+      'exercised.',
+    gaps: [0n, 30n, 30n, 30n, 30n],
+    buys: [1n, 5n, 12n, 20n].map((n) => n * 1_000_000_000n),
     finalAmount: 40n * 1_000_000_000n,
   })
 }
