@@ -43,7 +43,8 @@ export interface OracleFixture {
   readonly swaps: readonly SwapRecord[]
 }
 
-function dbcProgramSha256(): string {
+/** SHA-256 of the DBC bytecode currently on disk, used to date a recording. */
+export function dbcProgramSha256(): string {
   const manifest = loadProgramManifest()
   const dbc = manifest.programs.find((p) => p.name === 'dynamic-bonding-curve')
   if (!dbc) throw new Error('dynamic-bonding-curve missing from the program manifest')

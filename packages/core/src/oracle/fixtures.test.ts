@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { buildBaselineFixture, type OracleFixture } from './fixtures.js'
+import { buildBaselineFixture, dbcProgramSha256, type OracleFixture } from './fixtures.js'
 
 const fixturePath = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -22,13 +22,29 @@ const fixturePath = join(
 describe('baseline oracle fixture', () => {
   it('is deterministic and matches the committed recording', async () => {
     const generated = await buildBaselineFixture()
+    const accepting = process.env['UPDATE_FIXTURES'] === '1'
 
-    if (!existsSync(fixturePath) || process.env['UPDATE_FIXTURES'] === '1') {
+    if (accepting) {
       mkdirSync(dirname(fixturePath), { recursive: true })
       writeFileSync(fixturePath, `${JSON.stringify(generated, null, 2)}\n`)
+    } else if (!existsSync(fixturePath)) {
+      // Writing it here would make the test assert against whatever the program
+      // just produced, which always passes and proves nothing.
+      throw new Error(
+        `Missing recording at ${fixturePath}. It is committed and should not be ` +
+          `absent. Re-create it deliberately with UPDATE_FIXTURES=1.`,
+      )
     }
 
     const committed = JSON.parse(readFileSync(fixturePath, 'utf8')) as OracleFixture
+
+    // Check the cheap, legible thing before the deep comparison, so a stale
+    // recording reports itself instead of printing a 30KB diff.
+    expect(
+      committed.programSha256,
+      'recording was made against different bytecode; regenerate with UPDATE_FIXTURES=1',
+    ).toBe(dbcProgramSha256())
+
     expect(generated).toEqual(committed)
   })
 
