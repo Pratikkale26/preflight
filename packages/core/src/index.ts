@@ -9,10 +9,29 @@
  * construction: a curve quoted in SOL, USDC, or a tokenized equity is the same
  * arithmetic, and no code path branches on which asset is being used.
  *
- * The engine itself lands in a later phase. What exists today is the oracle:
- * a harness that runs Meteora's deployed program in-process, so that the
- * engine has ground truth to be measured against from the start.
+ * The engine is validated by replaying recordings made from Meteora's deployed
+ * program: `test/engine/differential.test.ts` compares every field of every
+ * swap exactly, with no tolerances.
  */
+
+export { VirtualPool } from './engine/pool.js'
+export type { SwapOptions, SwapOutcome } from './engine/pool.js'
+export { decodeConfig, decodePoolState, decodeSwapResult } from './engine/decode.js'
+export {
+  ActivationType,
+  BaseFeeMode,
+  CollectFeeMode,
+  getFeeMode,
+  TradeDirection,
+} from './engine/types.js'
+export type {
+  CurvePoint,
+  EngineConfig,
+  FeeMode,
+  PoolState,
+  SwapResult,
+  VolatilityTracker,
+} from './engine/types.js'
 
 export { DbcOracle } from './oracle/harness.js'
 export type { OracleOptions, PoolHandle, SwapObservation } from './oracle/harness.js'
