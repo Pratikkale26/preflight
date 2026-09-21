@@ -19,8 +19,8 @@ build/
 coverage/
 .vitest/
 
-# dumped on-chain program bytecode (fetched by script, not committed)
-*.so
+# note: on-chain program bytecode under packages/core/fixtures/programs/ IS committed,
+# so that tests run with zero network access. Refresh it with scripts/dump-programs.mjs.
 
 # editor / OS
 .DS_Store
