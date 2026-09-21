@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { Clock, LiteSVM, type TransactionMetadata } from 'litesvm'
 import { address, lamports } from '@solana/kit'
 import { Keypair, type PublicKey, SystemProgram } from '@solana/web3.js'
@@ -14,11 +16,12 @@ import {
   createDbcProgram,
   deriveDbcPoolAddress,
   DynamicBondingCurveClient,
+  SwapMode,
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import BN from 'bn.js'
 
 import { decodeAnchorEvents, type DecodedEvent, type EventCoder, findEvent } from './events.js'
-import { loadProgramManifest, programBytecodePath } from './programs.js'
+import { DBC_PROGRAM_ID, loadProgramManifest, programBytecodePath } from './programs.js'
 import { createSvmConnection } from './svm-connection.js'
 import { sendInstructions } from './tx.js'
 
@@ -42,7 +45,21 @@ const DEFAULT_SLOT = 300_000_000n
 const SLOTS_PER_SECOND_NUMERATOR = 5n
 const SLOTS_PER_SECOND_DENOMINATOR = 2n
 
+/**
+ * Deterministic keypairs.
+ *
+ * Fixtures record account addresses, so random keys would make every
+ * regeneration differ and make divergence impossible to spot. Seeding keeps a
+ * run reproducible without weakening anything: these keys only ever exist
+ * inside an in-memory SVM.
+ */
+function seededKeypair(seed: string, label: string): Keypair {
+  return Keypair.fromSeed(createHash('sha256').update(`${seed}/${label}`).digest())
+}
+
 export interface OracleOptions {
+  /** Seed for deterministic keypair generation. */
+  readonly seed?: string
   /** Decimals of the quote mint the harness creates. Defaults to 9, as for SOL. */
   readonly quoteDecimals?: number
   /** Starting wall-clock time, in seconds since the epoch. */
@@ -79,6 +96,7 @@ export class DbcOracle {
     readonly payer: Keypair,
     readonly quoteMint: PublicKey,
     readonly quoteDecimals: number,
+    private readonly seed: string,
   ) {}
 
   static async create(options: OracleOptions = {}): Promise<DbcOracle> {
@@ -100,7 +118,8 @@ export class DbcOracle {
       ),
     )
 
-    const payer = Keypair.generate()
+    const seed = options.seed ?? 'preflight'
+    const payer = seededKeypair(seed, 'payer')
     svm.airdrop(address(payer.publicKey.toBase58()), lamports(10_000n * 1_000_000_000n))
 
     const connection = createSvmConnection(svm)
@@ -111,7 +130,7 @@ export class DbcOracle {
     // Deliberately a plain SPL mint rather than native SOL. The engine has to
     // be quote-asset agnostic, so the oracle should not privilege SOL either.
     const quoteDecimals = options.quoteDecimals ?? 9
-    const quoteMint = Keypair.generate()
+    const quoteMint = seededKeypair(seed, 'quote-mint')
     const rent = svm.minimumBalanceForRentExemption(BigInt(MINT_SIZE))
     await sendInstructions(
       svm,
@@ -129,12 +148,12 @@ export class DbcOracle {
       [quoteMint],
     )
 
-    return new DbcOracle(svm, client, eventCoder, payer, quoteMint.publicKey, quoteDecimals)
+    return new DbcOracle(svm, client, eventCoder, payer, quoteMint.publicKey, quoteDecimals, seed)
   }
 
   /** Create a DBC config account from `buildCurve`-style parameters. */
-  async createConfig(params: ConfigParameters): Promise<PublicKey> {
-    const config = Keypair.generate()
+  async createConfig(params: ConfigParameters, label = 'config'): Promise<PublicKey> {
+    const config = seededKeypair(this.seed, label)
     const tx = await this.client.partner.createConfig({
       config: config.publicKey,
       feeClaimer: this.payer.publicKey,
@@ -152,7 +171,7 @@ export class DbcOracle {
     config: PublicKey,
     metadata: { name: string; symbol: string; uri: string },
   ): Promise<PoolHandle> {
-    const baseMint = Keypair.generate()
+    const baseMint = seededKeypair(this.seed, `base-mint/${metadata.symbol}`)
     const tx = await this.client.creator.createPool({
       ...metadata,
       payer: this.payer.publicKey,
@@ -228,6 +247,42 @@ export class DbcOracle {
     }
   }
 
+  /**
+   * Execute a partial-fill swap.
+   *
+   * This is how a launch actually completes: an exact-in swap that would push
+   * past the migration threshold reverts with InsufficientLiquidity, because
+   * the curve stops at `migration_sqrt_price` and leaves input unconsumed.
+   * Partial fill consumes only what the curve can absorb and returns the rest,
+   * which is the path the final trade of a real launch takes.
+   */
+  async swapPartialFill(
+    handle: PoolHandle,
+    params: { amountIn: BN | bigint; swapBaseForQuote: boolean; owner?: Keypair },
+  ): Promise<SwapObservation> {
+    const owner = params.owner ?? this.payer
+    const clock = this.clock()
+    const tx = await this.client.pool.swap2({
+      owner: owner.publicKey,
+      pool: handle.pool,
+      swapMode: SwapMode.PartialFill,
+      amountIn: new BN(params.amountIn.toString()),
+      minimumAmountOut: new BN(0),
+      swapBaseForQuote: params.swapBaseForQuote,
+      referralTokenAccount: null,
+    })
+    const meta = await sendInstructions(this.svm, tx.instructions, owner)
+    const events = decodeAnchorEvents(meta, this.eventCoder)
+    return {
+      event: findEvent(events, 'evtSwap2')?.data ?? null,
+      legacyEvent: findEvent(events, 'evtSwap')?.data ?? null,
+      events,
+      poolStateAfter: await this.client.state.getPool(handle.pool),
+      clock,
+      meta,
+    }
+  }
+
   /** Decoded config account, as the program stores it. */
   async configState(config: PublicKey): Promise<unknown> {
     return this.client.state.getPoolConfig(config)
@@ -236,6 +291,10 @@ export class DbcOracle {
   /** Decoded pool account, as the program stores it. */
   async poolState(pool: PublicKey): Promise<unknown> {
     return this.client.state.getPool(pool)
+  }
+
+  get programId(): string {
+    return DBC_PROGRAM_ID
   }
 
   /** Current SVM clock. */
