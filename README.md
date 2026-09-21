@@ -20,10 +20,12 @@ Dynamic Bonding Curves (DBC). It lets a launcher configure a curve, simulate adv
 organic market behaviour against it, measure the outcome, validate the simulation against real
 on-chain behaviour, and only then deploy.
 
-> **Status: early development.** The repository is public from its first commit so that the work
-> is visible as it happens. The simulation engine is not implemented yet — this commit is the
-> project skeleton. Claims below describe what is being built and how it will be verified, not
-> what already runs.
+> **Status: early development.** The repository is public from its first commit so that the work is
+> visible as it happens.
+>
+> **What runs today:** the oracle — Meteora's deployed program executing in-process, with a
+> committed recording of a full launch through to migration, and tests covering SOL-, stablecoin-
+> and equity-quoted launches. **What does not exist yet:** the simulation engine itself.
 
 ## Why
 
@@ -50,6 +52,11 @@ make that testable rather than assertable:
 The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
 itself, not documentation.
 
+The first of these already runs. `packages/core/fixtures/oracle/baseline.json` is a recording of a
+complete launch made by executing the real bytecode: four buys walking the curve up, then an
+oversized buy that partial-fills, halts exactly at the migration price and hands back the remainder.
+That last trade is the one a naive simulator gets wrong, and it is now pinned to a number.
+
 ## Quote-asset agnostic by construction
 
 `@preflight/core` operates exclusively in raw atomic units and never sees token decimals, ticker
@@ -57,9 +64,12 @@ symbols, or fiat prices. Those live in the configuration, metrics, and UI layers
 
 This is not an abstraction added for its own sake — it reflects how DBC actually works. Any SPL
 mint can be the quote asset, and production pools today are quoted in SOL, USDC, and arbitrary
-project tokens with differing decimals. The same engine therefore covers a memecoin launch quoted
-in SOL and a tokenized-equity launch quoted in a stock token, with no code path branching on which
-is which.
+project tokens with differing decimals. Meteora's own StockLaunch pairs launches against
+tokenized equities.
+
+This is tested rather than asserted: the same curve is run against SOL at 9 decimals, USDC at 6,
+and an equity profile at 6 — each with a realistic migration threshold — on the real program, and
+the fee split, price movement and threshold denomination behave identically in every case.
 
 ## Development
 

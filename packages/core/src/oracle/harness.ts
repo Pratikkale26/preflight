@@ -18,10 +18,12 @@ import {
   DynamicBondingCurveClient,
   SwapMode,
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import type { TokenDecimal } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import BN from 'bn.js'
 
 import { decodeAnchorEvents, type DecodedEvent, type EventCoder, findEvent } from './events.js'
 import { DBC_PROGRAM_ID, loadProgramManifest, programBytecodePath } from './programs.js'
+import { type BaselineOptions, baselineConfig } from './scenarios.js'
 import { createSvmConnection } from './svm-connection.js'
 import { sendInstructions } from './tx.js'
 
@@ -60,8 +62,11 @@ function seededKeypair(seed: string, label: string): Keypair {
 export interface OracleOptions {
   /** Seed for deterministic keypair generation. */
   readonly seed?: string
-  /** Decimals of the quote mint the harness creates. Defaults to 9, as for SOL. */
-  readonly quoteDecimals?: number
+  /**
+   * Decimals of the quote mint the harness creates. Defaults to 9, as for SOL.
+   * Constrained to what the program accepts, so 5 or 18 cannot be requested.
+   */
+  readonly quoteDecimals?: TokenDecimal
   /** Starting wall-clock time, in seconds since the epoch. */
   readonly unixTimestamp?: bigint
   /** Starting slot. */
@@ -95,7 +100,7 @@ export class DbcOracle {
     private readonly eventCoder: EventCoder,
     readonly payer: Keypair,
     readonly quoteMint: PublicKey,
-    readonly quoteDecimals: number,
+    readonly quoteDecimals: TokenDecimal,
     private readonly seed: string,
   ) {}
 
@@ -129,7 +134,7 @@ export class DbcOracle {
 
     // Deliberately a plain SPL mint rather than native SOL. The engine has to
     // be quote-asset agnostic, so the oracle should not privilege SOL either.
-    const quoteDecimals = options.quoteDecimals ?? 9
+    const quoteDecimals: TokenDecimal = options.quoteDecimals ?? 9
     const quoteMint = seededKeypair(seed, 'quote-mint')
     const rent = svm.minimumBalanceForRentExemption(BigInt(MINT_SIZE))
     await sendInstructions(
@@ -149,6 +154,19 @@ export class DbcOracle {
     )
 
     return new DbcOracle(svm, client, eventCoder, payer, quoteMint.publicKey, quoteDecimals, seed)
+  }
+
+  /**
+   * Build a baseline config already matched to this oracle's quote mint.
+   *
+   * The quote decimals are not recoverable from `ConfigParameters` — they are
+   * folded into `sqrtStartPrice` — so a config built for 9 decimals and run
+   * against a 6-decimal mint would be wrong by a factor of 1000 with nothing
+   * to flag it. Threading the oracle's own value through removes that whole
+   * class of mistake for the common path.
+   */
+  configFor(options: Omit<BaselineOptions, 'quoteDecimals'> = {}): ConfigParameters {
+    return baselineConfig({ ...options, quoteDecimals: this.quoteDecimals })
   }
 
   /** Create a DBC config account from `buildCurve`-style parameters. */

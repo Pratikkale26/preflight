@@ -1,8 +1,8 @@
 # Architecture
 
 > This document describes the intended structure and the reasoning behind it. Packages are
-> introduced phase by phase; only `@preflight/core` exists so far, and it is currently an empty
-> public surface.
+> introduced phase by phase. Today `@preflight/core` contains the **oracle** — the harness that runs
+> Meteora's deployed program in-process. The simulation engine itself is next.
 
 ## Package layout
 
@@ -60,6 +60,60 @@ DBC advances on two independent clocks, and conflating them is the most common m
 
 The engine is parameterised by both. Agent simulations generate both; historical replay supplies
 real slots and real block times.
+
+## The oracle
+
+`packages/core/src/oracle/` runs the real, deployed DBC program inside an in-process SVM
+([LiteSVM](https://github.com/LiteSVM/litesvm)), driven by Meteora's own SDK. Nothing in it
+reimplements DBC. It exists so that the engine has ground truth to be measured against from the
+first commit, rather than a single big-bang validation at the end.
+
+| Module              | Role                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| `programs.ts`       | Committed bytecode and its manifest                             |
+| `tx.ts`             | Bridges web3.js v1 instructions into `@solana/kit` transactions |
+| `svm-connection.ts` | A `Connection` backed by the in-memory SVM                      |
+| `events.ts`         | Reads Anchor events out of inner instructions                   |
+| `harness.ts`        | Creates configs and pools, executes swaps, records results      |
+| `scenarios.ts`      | The configurations the oracle is driven with                    |
+| `fixtures.ts`       | Turns a run into a committed JSON recording                     |
+
+Four things about the real program shaped this code, none of them obvious from documentation:
+
+1. **Two programs are required.** `initialize_virtual_pool_with_spl_token` CPIs into Metaplex
+   Token Metadata, so pool creation fails unless that program is loaded too.
+2. **Events are not in the logs.** The swap handler is annotated `#[event_cpi]`, so `EvtSwap` and
+   `EvtSwap2` are emitted as a self-CPI and are only readable from inner instructions.
+3. **Two JavaScript generations meet here.** The Meteora SDK is web3.js v1; LiteSVM 1.x speaks
+   `@solana/kit`. `tx.ts` is the only module that knows both dialects.
+4. **The pool address is derived, not searched.** Scanning by config would need
+   `getProgramAccounts`, which an in-memory SVM has no efficient answer for. The pool is a PDA, so
+   deriving it is both exact and cheaper.
+
+The `Connection` shim implements only what the SDK actually calls and throws by name for anything
+else, so a new SDK code path surfaces as a clear error rather than a plausible lie.
+
+### Fixtures
+
+A fixture is a recording of what the program did: the config, the pool state before and after every
+swap, the fully decoded event, and the clock at each step. Keypairs are seeded, so a run is
+reproducible and the fixture test can regenerate and compare on every run — which proves the oracle
+is deterministic and turns any behavioural change into a reviewable diff.
+
+Each recording carries the SHA-256 of the bytecode that produced it, so a Meteora program upgrade
+marks a fixture stale rather than leaving it quietly wrong.
+
+## Quote assets in practice
+
+The claim that the engine is quote-asset agnostic is tested, not asserted. `quote-assets.test.ts`
+runs the same curve against three profiles on the real program — SOL at 9 decimals, USDC at 6, and
+a tokenized-equity profile at 6, each with a realistic migration threshold — and checks that the fee
+split, the price movement and the threshold denomination all behave identically.
+
+One sharp edge worth recording: **quote decimals are not recoverable from `ConfigParameters`.** They
+are folded into `sqrtStartPrice` when the curve is built. A config built for 9 decimals and run
+against a 6-decimal mint is wrong by a factor of 1000, and nothing in the config would reveal it.
+`DbcOracle.configFor()` exists to make that mistake unrepresentable for the common path.
 
 ## Verification
 
