@@ -35,7 +35,7 @@ export type {
 
 export { DbcOracle } from './oracle/harness.js'
 export type { OracleOptions, PoolHandle, SwapObservation } from './oracle/harness.js'
-export { baselineConfig } from './oracle/scenarios.js'
+
 export { buildBaselineFixture } from './oracle/fixtures.js'
 export type { OracleFixture, SwapRecord } from './oracle/fixtures.js'
 export { decodeAnchorEvents, findEvent } from './oracle/events.js'

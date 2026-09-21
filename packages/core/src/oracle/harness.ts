@@ -23,7 +23,7 @@ import BN from 'bn.js'
 
 import { decodeAnchorEvents, type DecodedEvent, type EventCoder, findEvent } from './events.js'
 import { DBC_PROGRAM_ID, loadProgramManifest, programBytecodePath } from './programs.js'
-import { type BaselineOptions, baselineConfig } from './scenarios.js'
+import { type BaselineOptions, baselineConfig } from '@preflight/config'
 import { createSvmConnection } from './svm-connection.js'
 import { sendInstructions } from './tx.js'
 

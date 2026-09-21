@@ -12,12 +12,12 @@ import {
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
 /**
- * Configurations used to drive the oracle.
+ * Starting points for a launch.
  *
- * These are deliberately plain: a single well-understood curve is worth more at
- * this stage than a wide matrix, because every field of every resulting swap is
- * going to be asserted against. Broader coverage comes later, once the engine
- * exists to compare against.
+ * These are deliberately plain. A single well-understood curve is worth more
+ * than a wide menu while every field of every resulting swap is being asserted
+ * against real program output, and a launcher is better served by one shape
+ * they can reason about than by ten they cannot.
  */
 
 export interface BaselineOptions {

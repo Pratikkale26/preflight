@@ -5,7 +5,7 @@ import { DbcOracle } from './harness.js'
 import { loadProgramManifest, programBytecodePath } from './programs.js'
 import { CollectFeeMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
-import { baselineConfig } from './scenarios.js'
+import { baselineConfig } from '@preflight/config'
 import { type Json, toJson } from './serialize.js'
 
 /**
