@@ -1,6 +1,19 @@
-# Preflight
+<p align="center">
+  <img src="assets/logo.png" alt="Preflight" width="440">
+</p>
 
-**Simulate your Meteora Dynamic Bonding Curve configuration before real money hits the curve.**
+<p align="center">
+  <strong>Simulate your Meteora Dynamic Bonding Curve configuration before real money hits the curve.</strong>
+</p>
+
+<p align="center">
+  <a href="#the-correctness-claim">Correctness</a> &middot;
+  <a href="#quote-asset-agnostic-by-construction">Quote-asset agnostic</a> &middot;
+  <a href="#development">Development</a> &middot;
+  <a href="LICENSE">MIT</a>
+</p>
+
+---
 
 Preflight is a simulation and mechanism-design tool for [Meteora](https://meteora.ag)
 Dynamic Bonding Curves (DBC). It lets a launcher configure a curve, simulate adversarial and
