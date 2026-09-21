@@ -25,8 +25,10 @@ on-chain behaviour, and only then deploy.
 >
 > **What runs today:** the oracle — Meteora's deployed program executing in-process — and the
 > simulation engine, which replays two recorded launches bit-exactly, every field, no tolerances.
-> Tests cover SOL-, stablecoin- and equity-quoted launches. **What does not exist yet:** the agent
-> simulation, the metrics, and the interface.
+> There is also a configuration layer: curve presets, a validator that agrees with the program about
+> what it would reject, and the read-outs a launcher acts on. Tests cover SOL-, stablecoin- and
+> equity-quoted launches. **What does not exist yet:** the agent simulation, the metrics, and the
+> interface.
 
 ## Why
 
