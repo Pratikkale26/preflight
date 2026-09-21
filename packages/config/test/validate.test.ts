@@ -101,3 +101,35 @@ describe('quote-asset findings', () => {
     expect(codes(valid())).toEqual([])
   })
 })
+
+describe('the backstop', () => {
+  it('catches what the explicit checks do not', () => {
+    const config = valid()
+    // Nothing above inspects the migration fee, so this can only be caught by
+    // deferring to the SDK. The backstop is the reason a gap in the checks
+    // above degrades to a terser message rather than to a false pass.
+    config.migrationFee = { feePercentage: 200, creatorFeePercentage: 0 }
+
+    const result = validateLaunchConfig(config)
+    expect(result.valid).toBe(false)
+    expect(result.findings.map((f) => f.code)).toContain('program-would-reject')
+    expect(result.findings[0]!.message).toContain('The program would reject')
+  })
+
+  it('is not consulted once an explicit check has already failed', () => {
+    const config = valid()
+    config.creatorTradingFeePercentage = 150
+    config.migrationFee = { feePercentage: 200, creatorFeePercentage: 0 }
+
+    // Running it anyway would bury a precise message under a vague one.
+    const codesFound = codes(config)
+    expect(codesFound).toContain('creator-fee-share-out-of-range')
+    expect(codesFound).not.toContain('program-would-reject')
+  })
+
+  it('rejects a curve with no segments at all', () => {
+    const config = valid()
+    config.curve = []
+    expect(codes(config)).toContain('curve-empty')
+  })
+})

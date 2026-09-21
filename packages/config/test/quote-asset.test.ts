@@ -51,6 +51,14 @@ describe('quoteMintEligibility', () => {
     expect(result.requiresTokenBadge).toBe(false)
   })
 
+  it('accepts a Token-2022 mint that lists no extensions at all', () => {
+    // A caller describing a mint by hand may simply omit the field rather than
+    // pass an empty list, and the two have to mean the same thing.
+    const result = quoteMintEligibility(token2022())
+    expect(result.eligible).toBe(true)
+    expect(result.requiresTokenBadge).toBe(false)
+  })
+
   it('accepts metadata extensions without a badge', () => {
     const result = quoteMintEligibility(
       token2022({ extensions: ['MetadataPointer', 'TokenMetadata'] }),
