@@ -46,6 +46,8 @@ So Preflight wraps the SDK's math behind its own interface and builds the state 
 Differential tests against the deployed program are the ground truth either way; if the SDK is
 ever found to diverge from deployed bytecode, the interface confines the replacement to one layer.
 
+This now exists — see [The engine](#the-engine).
+
 Compiling the program's Rust math to WebAssembly was considered and rejected: extracting it from
 Anchor's `Result` and `#[zero_copy]` machinery is disproportionate work, and it provides no
 assurance that differential testing does not already provide.
@@ -108,6 +110,55 @@ is deterministic and turns any behavioural change into a reviewable diff.
 
 Each recording carries the SHA-256 of the bytecode that produced it, so a Meteora program upgrade
 marks a fixture stale rather than leaving it quietly wrong.
+
+## The engine
+
+`packages/core/src/engine/` is the stateful layer the SDK does not provide.
+
+| Module          | Role                                                                 |
+| --------------- | -------------------------------------------------------------------- |
+| `types.ts`      | The pool, config and swap result in `bigint`, plus the fee-mode rule |
+| `decode.ts`     | Recordings back into engine types, field by field                    |
+| `sdk-bridge.ts` | The only module that speaks BN                                       |
+| `pool.ts`       | `VirtualPool`: applies swaps, evolves volatility, detects migration  |
+
+### Why `bigint` rather than BN
+
+The engine holds its state in `bigint` and converts to BN only at the SDK
+boundary, the same way `tx.ts` confines the web3.js/kit divide to one module.
+An agent simulation executes thousands of swaps per run, where per-operation BN
+allocation costs real time, and a single numeric dialect across the engine, its
+metrics and its agents is worth more than matching the SDK's types at every call
+site. If the differential tests ever show the SDK's math diverging from deployed
+bytecode, `sdk-bridge.ts` is the seam where a hand-written port replaces it.
+
+### How the engine is trusted
+
+`test/engine/differential.test.ts` replays each recording and compares three
+groups of fields exactly — no tolerances, no rounding:
+
+- the eight fields of the swap result,
+- the nine pool fields: price, both reserves, and six fee buckets,
+- the four volatility-tracker fields.
+
+A simulator that is approximately right about fees and prices is not useful for
+deciding how to launch a token, so "close enough" is not an acceptable result
+anywhere in this suite.
+
+### Mutation testing
+
+A differential test that passes on its first run deserves suspicion, so the
+suite is checked by deliberately breaking the engine and confirming each break
+is caught: a one-lamport error in the quote reserve, taking the fee on the
+output instead of the input, treating the final partial fill as exact-in,
+dropping the doubling in the bin-distance calculation, skipping the decay
+reduction factor, and advancing the volatility timestamp unconditionally.
+
+The last of those initially **passed**, because every trade in the recording
+crossed a price bin and the conditional branch was never taken. The fix was to
+improve the recording — adding a buy small enough not to cross a bin — rather
+than to soften the test. A recording that never reaches a branch cannot
+validate it.
 
 ## Quote assets in practice
 

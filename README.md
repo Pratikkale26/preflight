@@ -23,9 +23,10 @@ on-chain behaviour, and only then deploy.
 > **Status: early development.** The repository is public from its first commit so that the work is
 > visible as it happens.
 >
-> **What runs today:** the oracle — Meteora's deployed program executing in-process, with a
-> committed recording of a full launch through to migration, and tests covering SOL-, stablecoin-
-> and equity-quoted launches. **What does not exist yet:** the simulation engine itself.
+> **What runs today:** the oracle — Meteora's deployed program executing in-process — and the
+> simulation engine, which replays two recorded launches bit-exactly, every field, no tolerances.
+> Tests cover SOL-, stablecoin- and equity-quoted launches. **What does not exist yet:** the agent
+> simulation, the metrics, and the interface.
 
 ## Why
 
