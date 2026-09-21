@@ -160,6 +160,33 @@ improve the recording — adding a buy small enough not to cross a bin — rathe
 than to soften the test. A recording that never reaches a branch cannot
 validate it.
 
+## The configuration layer
+
+`packages/config/` is where decimals, ticker symbols and fiat prices live, precisely so the engine
+never has to know about them.
+
+| Module           | Role                                                               |
+| ---------------- | ------------------------------------------------------------------ |
+| `quote-asset.ts` | What a launch is priced in, and whether the program will accept it |
+| `presets.ts`     | Starting points for a launch                                       |
+| `validate.ts`    | Whether the program would accept a configuration, and why not      |
+| `derive.ts`      | The figures a launcher actually wants to see                       |
+
+Two of these are checked against the deployed program rather than against themselves:
+
+- **The validator** is put to both itself and the real `create_config` in LiteSVM for one valid and
+  five invalid configurations, and the two must reach the same verdict. A validator that is merely
+  plausible is worse than none, because it gives a launcher confidence the chain does not share.
+- **The derived figures** include `migrationSqrtPrice` and the base tokens seeded at graduation,
+  neither of which appears in the configuration a launcher writes — the program computes and stores
+  them. Comparing against the stored values means the numbers shown before a launch are the numbers
+  the chain will use.
+
+Findings are structured rather than thrown, and all of them are reported at once: fixing one number
+at a time teaches a launcher nothing about the others. A mint that needs a `TokenBadge` is reported
+as a warning rather than an error, because the configuration is sound and what is missing is a
+decision by Meteora, not a number to change.
+
 ## Quote assets in practice
 
 The claim that the engine is quote-asset agnostic is tested, not asserted. `quote-assets.test.ts`

@@ -11,5 +11,7 @@ export { oneWholeUnit, quoteMintEligibility, SOL, TokenProgram, USDC } from './q
 export type { QuoteAsset, QuoteEligibility } from './quote-asset.js'
 export { baselineConfig, QUOTE_ASSET_PROFILES } from './presets.js'
 export type { BaselineOptions } from './presets.js'
+export { deriveLaunchMetrics } from './derive.js'
+export type { LaunchMetrics } from './derive.js'
 export { validateLaunchConfig } from './validate.js'
 export type { Finding, Severity, ValidationResult } from './validate.js'
