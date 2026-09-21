@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { decodeConfig, decodePoolState, decodeSwapResult } from '../../src/engine/decode.js'
 import { VirtualPool } from '../../src/engine/pool.js'
+import { TradeDirection } from '../../src/engine/types.js'
 import type { OracleFixture } from '../../src/oracle/fixtures.js'
 
 /**
@@ -74,9 +75,15 @@ describe.each(FIXTURES)('engine vs deployed program: %s', (name) => {
       const expected = decodeSwapResult((swap.event as { swapResult: unknown }).swapResult)
       const expectedState = decodePoolState(swap.poolStateAfter)
 
-      const { result, stateAfter } = pool.swap(BigInt(swap.amountIn), 1, {
-        currentPoint: BigInt(swap.clock.unixTimestamp),
-        currentTimestamp: BigInt(swap.clock.unixTimestamp),
+      const clock = {
+        slot: BigInt(swap.clock.slot),
+        unixTimestamp: BigInt(swap.clock.unixTimestamp),
+      }
+      const { result, stateAfter } = pool.swap(BigInt(swap.amountIn), TradeDirection.QuoteToBase, {
+        // Derived from the config rather than hardcoded, so the recording also
+        // checks that the right clock is being read.
+        currentPoint: VirtualPool.currentPoint(config, clock),
+        currentTimestamp: clock.unixTimestamp,
         partialFill: swap.kind === 'partialFill',
       })
 
@@ -105,8 +112,11 @@ describe.each(FIXTURES)('engine vs deployed program: %s', (name) => {
 
     for (const swap of fixture.swaps) {
       expect(pool.isCurveComplete, `before swap ${swap.step}`).toBe(false)
-      pool.swap(BigInt(swap.amountIn), 1, {
-        currentPoint: BigInt(swap.clock.unixTimestamp),
+      pool.swap(BigInt(swap.amountIn), TradeDirection.QuoteToBase, {
+        currentPoint: VirtualPool.currentPoint(config, {
+          slot: BigInt(swap.clock.slot),
+          unixTimestamp: BigInt(swap.clock.unixTimestamp),
+        }),
         currentTimestamp: BigInt(swap.clock.unixTimestamp),
         partialFill: swap.kind === 'partialFill',
       })

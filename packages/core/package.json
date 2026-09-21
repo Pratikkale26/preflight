@@ -19,6 +19,7 @@
     "@solana/kit": "^8.3.0",
     "@solana/spl-token": "^0.4.15",
     "@types/bn.js": "^5.2.0",
+    "fast-check": "^4.10.2",
     "litesvm": "^1.4.1"
   }
 }
