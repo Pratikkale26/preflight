@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import BN from 'bn.js'
 
-import { DbcOracle } from './harness.js'
-import { baselineConfig } from './scenarios.js'
+import { DbcOracle } from '../../src/oracle/harness.js'
+import { baselineConfig } from '../../src/oracle/scenarios.js'
 
 /**
  * These tests execute Meteora's deployed bytecode. They are the reference the

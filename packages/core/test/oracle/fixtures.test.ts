@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { buildBaselineFixture, dbcProgramSha256, type OracleFixture } from './fixtures.js'
+import {
+  buildBaselineFixture,
+  dbcProgramSha256,
+  type OracleFixture,
+} from '../../src/oracle/fixtures.js'
 
 const fixturePath = join(
   dirname(fileURLToPath(import.meta.url)),

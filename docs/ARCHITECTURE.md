@@ -78,6 +78,12 @@ first commit, rather than a single big-bang validation at the end.
 | `scenarios.ts`      | The configurations the oracle is driven with                    |
 | `fixtures.ts`       | Turns a run into a committed JSON recording                     |
 
+Tests live in `packages/core/test/`, mirroring `src/`, rather than beside the modules they cover.
+The oracle is a handful of collaborating modules, and keeping the source listing free of test files
+makes it easier to read at a glance. They are still type-checked: `tsconfig.test.json` covers
+`test/` without emitting, and `pnpm typecheck` runs it, because an unchecked test suite is where
+type errors hide.
+
 Four things about the real program shaped this code, none of them obvious from documentation:
 
 1. **Two programs are required.** `initialize_virtual_pool_with_spl_token` CPIs into Metaplex

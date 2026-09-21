@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { DbcOracle } from './harness.js'
-import { baselineConfig, QUOTE_ASSET_PROFILES } from './scenarios.js'
+import { DbcOracle } from '../../src/oracle/harness.js'
+import { baselineConfig, QUOTE_ASSET_PROFILES } from '../../src/oracle/scenarios.js'
 
 /**
  * DBC accepts any SPL mint as the quote asset, so a launch can be priced in
