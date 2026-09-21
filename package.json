@@ -1,0 +1,30 @@
+{
+  "name": "preflight",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Simulation and mechanism-design tool for Meteora Dynamic Bonding Curves",
+  "license": "MIT",
+  "author": "Pratik Kale",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pratikkale26/preflight.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "typecheck": "tsc --build --force",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "pnpm typecheck && pnpm format:check && pnpm test"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
