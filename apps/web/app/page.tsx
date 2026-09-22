@@ -148,8 +148,8 @@ export default function Landing() {
               <div className="l">field comparisons against what the program recorded</div>
             </div>
             <div>
-              <div className="n">182</div>
-              <div className="l">tests, run before every commit</div>
+              <div className="n">5</div>
+              <div className="l">launches recorded from the deployed program and replayed</div>
             </div>
             <div>
               <div className="n">0</div>
