@@ -13,6 +13,7 @@ export {
   buildBaselineFixture,
   buildDynamicFeeFixture,
   buildExactOutFixture,
+  buildFeeDecayFixture,
   buildOutputFeeFixture,
   dbcProgramSha256,
 } from './fixtures.js'

@@ -56,6 +56,22 @@ export interface BaselineOptions {
   readonly startingFeeBps?: number
   /** Base fee once the schedule has run its course. Defaults to the start. */
   readonly endingFeeBps?: number
+  /**
+   * Decay the fee over time rather than holding it flat.
+   *
+   * A high opening fee that falls away is the standard defence against being
+   * sniped: expensive to be first, ordinary to arrive later.
+   */
+  readonly feeSchedule?: {
+    readonly mode: 'linear' | 'exponential'
+    readonly numberOfPeriod: number
+    readonly totalDuration: number
+  }
+  /**
+   * Whether the fee schedule counts slots or wall-clock seconds. Slots are
+   * about 400ms, so the same schedule expressed in slots runs far shorter.
+   */
+  readonly activationType?: ActivationType
 }
 
 /**
@@ -78,12 +94,15 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
     },
     fee: {
       baseFeeParams: {
-        baseFeeMode: BaseFeeMode.FeeSchedulerLinear,
+        baseFeeMode:
+          options.feeSchedule?.mode === 'exponential'
+            ? BaseFeeMode.FeeSchedulerExponential
+            : BaseFeeMode.FeeSchedulerLinear,
         feeSchedulerParam: {
           startingFeeBps: options.startingFeeBps ?? 100,
           endingFeeBps: options.endingFeeBps ?? options.startingFeeBps ?? 100,
-          numberOfPeriod: 0,
-          totalDuration: 0,
+          numberOfPeriod: options.feeSchedule?.numberOfPeriod ?? 0,
+          totalDuration: options.feeSchedule?.totalDuration ?? 0,
         },
       },
       dynamicFeeEnabled: options.dynamicFee ?? false,
@@ -110,7 +129,7 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
       totalVestingDuration: 0,
       cliffDurationFromMigrationTime: 0,
     },
-    activationType: ActivationType.Timestamp,
+    activationType: options.activationType ?? ActivationType.Timestamp,
     percentageSupplyOnMigration: 20,
     migrationQuoteThreshold: options.migrationQuoteThreshold ?? 50,
   })

@@ -8,6 +8,7 @@ import {
   buildBaselineFixture,
   buildDynamicFeeFixture,
   buildExactOutFixture,
+  buildFeeDecayFixture,
   buildOutputFeeFixture,
   dbcProgramSha256,
   type OracleFixture,
@@ -22,6 +23,7 @@ const RECORDINGS = [
   { file: 'dynamic-fee', build: buildDynamicFeeFixture },
   { file: 'output-fee', build: buildOutputFeeFixture },
   { file: 'exact-out', build: buildExactOutFixture },
+  { file: 'fee-decay', build: buildFeeDecayFixture },
 ] as const
 
 /**

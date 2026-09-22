@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import { DbcOracle } from './harness.js'
 import { loadProgramManifest, programBytecodePath } from './programs.js'
-import { CollectFeeMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { ActivationType, CollectFeeMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
 import { baselineConfig } from '@preflight/config'
 import { type Json, toJson } from './serialize.js'
@@ -71,6 +71,7 @@ async function runLaunch(options: {
   dynamicFee: boolean
   collectFeeMode?: CollectFeeMode
   creatorTradingFeePercentage?: number
+  preset?: Parameters<typeof baselineConfig>[0]
   /** Seconds to advance before each swap after the first. */
   gaps: readonly bigint[]
   buys: readonly bigint[]
@@ -78,6 +79,7 @@ async function runLaunch(options: {
 }): Promise<OracleFixture> {
   const oracle = await DbcOracle.create({ seed: options.seed })
   const configParams = baselineConfig({
+    ...options.preset,
     dynamicFee: options.dynamicFee,
     ...(options.collectFeeMode !== undefined ? { collectFeeMode: options.collectFeeMode } : {}),
     ...(options.creatorTradingFeePercentage !== undefined
@@ -296,6 +298,35 @@ export async function buildExactOutFixture(): Promise<OracleFixture> {
     initialPoolState,
     swaps,
   }
+}
+
+/**
+ * A launch whose fee falls away exponentially, counted in slots.
+ *
+ * Two paths that had never been run: the exponential schedule, and the clock
+ * that counts slots rather than seconds. A launch using either was unverified
+ * rather than known to work, and both change what every trade costs.
+ */
+export async function buildFeeDecayFixture(): Promise<OracleFixture> {
+  return runLaunch({
+    name: 'Preflight Fee Decay',
+    symbol: 'PFE',
+    seed: 'preflight/fee-decay',
+    dynamicFee: false,
+    preset: {
+      startingFeeBps: 800,
+      endingFeeBps: 100,
+      feeSchedule: { mode: 'exponential', numberOfPeriod: 8, totalDuration: 240 },
+      activationType: ActivationType.Slot,
+    },
+    description:
+      'An 8% opening fee decaying exponentially to 1% over eight periods, with ' +
+      'the schedule counted in slots rather than seconds. Gaps between trades ' +
+      'cross several periods, so the fee genuinely falls as the launch runs.',
+    gaps: [0n, 40n, 40n, 60n, 90n],
+    buys: [2n, 5n, 10n, 18n].map((n) => n * 1_000_000_000n),
+    finalAmount: 40n * 1_000_000_000n,
+  })
 }
 
 export async function buildBaselineFixture(): Promise<OracleFixture> {

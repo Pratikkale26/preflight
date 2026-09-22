@@ -74,8 +74,10 @@ answer.
 
 ### What is not covered yet
 
-The exponential fee scheduler and slot-based activation have no recording, so a
-pool using either is unverified rather than known-good.
+The deprecated rate-limiter fee mode is not modelled, and neither is what
+happens to surplus and leftover base after a curve graduates. A pool using the
+rate limiter cannot be replayed; post-graduation accounting is simply out of
+scope for a tool about choosing a curve.
 
 Where the engine cannot price a swap at all, the replay stops and says so
 rather than skipping it and reporting agreement on the rest. A replay that
@@ -84,16 +86,22 @@ that fails, because it reads as a pass.
 
 ## Differential tests against the program
 
-Three launches are recorded by running the deployed bytecode inside an
+Five launches are recorded by running the deployed bytecode inside an
 in-process SVM, then replayed through the engine on every test run: a plain
-curve, one with the volatility-driven dynamic fee, and one collecting fees in
-the token being bought. Twenty-one fields are compared per swap: the eight of the swap result, which
+curve; one with the volatility-driven dynamic fee; one collecting fees in the
+token being bought and splitting them with the creator; one mixing exact-in
+buys with exact-out buys; and one whose fee decays exponentially on a schedule
+counted in slots rather than seconds.
+
+That last one covers the two paths that were unverified until recently. Its
+recorded fee falls from 8.000% to 1.001% across the launch, so the schedule is
+genuinely running rather than sitting at its opening value. Twenty-one fields are compared per swap: the eight of the swap result, which
 come from the SDK, and **thirteen that are Preflight's own** — nine pool fields
 covering the price, both reserves and all six fee buckets, and the four of the
 volatility tracker.
 
-Those thirteen are the ones that matter for this project's claim. Across the
-four recordings that is 260 direct comparisons of Preflight's state machine
+Those thirteen are the ones that matter for this project's claim — across the
+recordings, several hundred direct comparisons of Preflight's state machine
 against what the deployed program did.
 
 Each recording carries the SHA-256 of the bytecode that produced it, so a
