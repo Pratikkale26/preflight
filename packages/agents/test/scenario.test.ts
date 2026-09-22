@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { decodeConfig, decodePoolState, TradeDirection } from '@preflight/core'
-import type { OracleFixture } from '@preflight/core'
+import { type OracleFixture } from '@preflight/core/oracle'
 import { describe, expect, it } from 'vitest'
 
 import { organic, runScenario, sniper, type ScenarioParticipant, whale } from '../src/index.js'

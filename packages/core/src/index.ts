@@ -10,8 +10,10 @@
  * arithmetic, and no code path branches on which asset is being used.
  *
  * The engine is validated by replaying recordings made from Meteora's deployed
- * program: `test/engine/differential.test.ts` compares every field of every
- * swap exactly, with no tolerances.
+ * program. Those recordings are produced by the oracle, which lives behind a
+ * separate entry point (`@preflight/core/oracle`) because it loads LiteSVM and
+ * real bytecode and therefore only runs under Node. The engine itself is plain
+ * arithmetic and runs anywhere, including a browser.
  */
 
 export { VirtualPool } from './engine/pool.js'
@@ -32,25 +34,6 @@ export type {
   SwapResult,
   VolatilityTracker,
 } from './engine/types.js'
-
-export { DbcOracle } from './oracle/harness.js'
-export type { OracleOptions, PoolHandle, SwapObservation } from './oracle/harness.js'
-
-export { buildBaselineFixture } from './oracle/fixtures.js'
-export type { OracleFixture, SwapRecord } from './oracle/fixtures.js'
-export { decodeAnchorEvents, findEvent } from './oracle/events.js'
-export type { DecodedEvent, EventCoder } from './oracle/events.js'
-export {
-  DBC_PROGRAM_ID,
-  loadProgramManifest,
-  MPL_TOKEN_METADATA_PROGRAM_ID,
-  programBytecodePath,
-} from './oracle/programs.js'
-export type { ProgramFixture } from './oracle/programs.js'
-export { createSvmConnection } from './oracle/svm-connection.js'
-export { sendInstructions, toKitInstruction, TransactionFailedError } from './oracle/tx.js'
-export { toJson } from './oracle/serialize.js'
-export type { Json } from './oracle/serialize.js'
 
 /** Identifier for this package, used by the toolchain smoke test. */
 export const PACKAGE_NAME = '@preflight/core'

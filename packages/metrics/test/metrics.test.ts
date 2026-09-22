@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { organic, runScenario, sniper, whale } from '@preflight/agents'
 import { SOL } from '@preflight/config'
-import { decodeConfig, decodePoolState, type OracleFixture } from '@preflight/core'
+import { decodeConfig, decodePoolState } from '@preflight/core'
+import { type OracleFixture } from '@preflight/core/oracle'
 import { describe, expect, it } from 'vitest'
 
 import { buildReport, gini, priceFromSqrtPrice, ratio } from '../src/index.js'
