@@ -134,6 +134,13 @@ pnpm programs:dump   # refresh the committed bytecode from mainnet (needs .env)
 Copy `.env.example` to `.env` and add an RPC endpoint if you want to re-dump the
 programs. Nothing else needs it.
 
+## About this project
+
+- [Validation](docs/VALIDATION.md) — what is checked against the deployed program, and what is not
+- [Architecture](docs/ARCHITECTURE.md) — how the pieces fit and why
+- [Go to market](docs/GO-TO-MARKET.md) — who this is for, and an honest account of what is unproven
+- [How this was built](docs/PROVENANCE.md) — tooling, process, and the mistakes it caught
+
 ## Acknowledgements
 
 Preflight builds on Meteora's open-source work, in particular the
