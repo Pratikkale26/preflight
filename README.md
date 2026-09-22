@@ -74,16 +74,41 @@ This is tested rather than asserted: the same curve is run against SOL at 9 deci
 and an equity profile at 6 — each with a realistic migration threshold — on the real program, and
 the fee split, price movement and threshold denomination behave identically in every case.
 
-## Development
+## Running it
 
-Requires Node >= 20 and pnpm.
+Requires Node >= 20 and [pnpm](https://pnpm.io).
 
 ```bash
 pnpm install
-pnpm verify      # typecheck + format check + tests
+pnpm dev
 ```
 
-`pnpm verify` is the gate: it must pass before any commit.
+Then open <http://localhost:3000>. Pick a quote asset, move the fee or the
+graduation threshold, change who turns up, and the launch re-runs as you type —
+the engine is plain arithmetic and runs in the browser, so nothing round-trips
+to a server.
+
+The same seed always produces the same launch. That is what makes two curves
+comparable: any difference you see is the configuration, not the dice.
+
+### Checking it
+
+```bash
+pnpm verify      # typecheck, formatting, program-hash check, and the test suite
+pnpm coverage    # which lines and branches the tests actually reach
+```
+
+`pnpm verify` is the gate: it must pass before any commit. It includes the
+differential tests, which boot Meteora's deployed bytecode in an in-process SVM
+and compare the engine against it field by field. No network access is needed —
+the program binaries are committed for exactly that reason.
+
+```bash
+pnpm programs:dump   # refresh the committed bytecode from mainnet (needs .env)
+```
+
+Copy `.env.example` to `.env` and add an RPC endpoint if you want to re-dump the
+programs. Nothing else needs it.
 
 ## Acknowledgements
 

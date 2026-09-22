@@ -15,6 +15,8 @@
   },
   "packageManager": "pnpm@11.21.0",
   "scripts": {
+    "dev": "pnpm --filter @preflight/web dev",
+    "build": "pnpm --filter @preflight/web build",
     "typecheck": "tsc --build --force && tsc -p packages/core/tsconfig.test.json && tsc -p packages/config/tsconfig.test.json && tsc -p packages/agents/tsconfig.test.json && tsc -p packages/metrics/tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
