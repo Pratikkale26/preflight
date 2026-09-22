@@ -80,7 +80,7 @@ export function CurveChart({
               x2={pad.left + pw}
               y1={y(value)}
               y2={y(value)}
-              stroke="var(--line-soft)"
+              stroke="var(--line)"
             />
             <text
               x={pad.left - 10}
@@ -109,11 +109,11 @@ export function CurveChart({
           x2={x(cheapUntil)}
           y1={pad.top}
           y2={pad.top + ph}
-          stroke="var(--brand-deep)"
+          stroke="var(--brand-3)"
           strokeWidth="1"
           strokeDasharray="3 3"
         />
-        <text x={x(cheapUntil) + 7} y={pad.top + 13} fontSize="10.5" fill="var(--brand-bright)">
+        <text x={x(cheapUntil) + 7} y={pad.top + 13} fontSize="10.5" fill="var(--brand-2)">
           {(cheapUntil.progress * 100).toFixed(0)}% of the raise is under 2×
         </text>
 
@@ -140,7 +140,7 @@ export function CurveChart({
               cx={x(active)}
               cy={y(active.price)}
               r="4.5"
-              fill="var(--brand-bright)"
+              fill="var(--brand-2)"
               stroke="var(--panel)"
               strokeWidth="2.5"
             />

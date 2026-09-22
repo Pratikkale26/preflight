@@ -10,6 +10,9 @@
 export { oneWholeUnit, quoteMintEligibility, SOL, TokenProgram, USDC } from './quote-asset.js'
 export type { QuoteAsset, QuoteEligibility } from './quote-asset.js'
 export { baselineConfig, QUOTE_ASSET_PROFILES } from './presets.js'
+// Re-exported so a consumer can name a fee mode without taking a direct
+// dependency on the SDK, which carries web3.js and a good deal else.
+export { ActivationType, CollectFeeMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
 export type { BaselineOptions } from './presets.js'
 export { deriveLaunchMetrics } from './derive.js'
 export type { LaunchMetrics } from './derive.js'

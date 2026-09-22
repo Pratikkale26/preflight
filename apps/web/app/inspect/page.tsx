@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { Evidence } from '../../components/Evidence'
 import { Nav } from '../../components/Nav'
 
 /**
@@ -23,6 +24,7 @@ interface Divergence {
 interface Result {
   address: string
   meta: { baseMint: string; quoteMint: string; creator: string; isMigrated: boolean }
+  quote: { mint: string; decimals: number; symbol: string }
   state: {
     price: number
     quoteRaised: string
@@ -82,16 +84,30 @@ export default function Inspect() {
 
   return (
     <>
-      <Nav cta={false} />
+      <Nav app />
       <div className="wrap app">
-        <div style={{ maxWidth: 860 }}>
-          <h1 style={{ fontSize: 30, letterSpacing: '-0.03em', marginBottom: 12 }}>
-            Replay a real launch
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 28, letterSpacing: '-0.03em', marginBottom: 12 }}>
+            Does the engine agree with the chain?
           </h1>
-          <p style={{ color: 'var(--ink-2)', fontSize: 15.5, marginBottom: 26, lineHeight: 1.62 }}>
-            Paste a Meteora bonding curve pool from mainnet. Preflight reads what the program holds
-            for it right now, replays every trade it has seen through the same engine the simulator
-            uses, and compares the result against what the program recorded at the time.
+          <p style={{ color: 'var(--ink-2)', fontSize: 15, marginBottom: 26, lineHeight: 1.62 }}>
+            The program records its own answer for every swap it executes. Replaying a real launch
+            and diffing every recorded field turns published history into a correctness test.
+            Nothing below is an assertion about the engine; each row is a comparison that either
+            matched or did not.
+          </p>
+
+          <div className="stack" style={{ marginBottom: 34 }}>
+            <Evidence />
+          </div>
+
+          <h2 style={{ fontSize: 19, letterSpacing: '-0.02em', marginBottom: 10 }}>
+            Replay a pool of your own
+          </h2>
+          <p style={{ color: 'var(--ink-2)', fontSize: 14, marginBottom: 20, lineHeight: 1.62 }}>
+            Reads the pool account and its transaction history from mainnet, replays every trade
+            through the same engine the workstation uses, and compares against what the program
+            recorded at the time.
           </p>
 
           <form
@@ -164,8 +180,12 @@ export default function Inspect() {
 }
 
 function Report({ result }: { result: Result }) {
-  const { state, curve, replay, meta } = result
+  const { state, curve, replay, meta, quote } = result
   const clean = replay.exact && replay.divergences === 0
+  // Read from the mint rather than assumed: DBC quotes launches in whatever
+  // SPL token the partner chose, and calling a USDC pool's numbers SOL would
+  // be wrong by three decimal places and by a ticker.
+  const amount = (atomic: string) => whole(atomic, quote.decimals)
 
   return (
     <div className="stack">
@@ -192,24 +212,28 @@ function Report({ result }: { result: Result }) {
           v={state.graduated ? 'Graduated' : 'On the curve'}
           s={`${(state.progress * 100).toFixed(1)}% raised`}
         />
-        <Tile k="Price now" v={fmt(state.price)} s="SOL per token" />
+        <Tile k="Price now" v={fmt(state.price)} s={`${quote.symbol} per token`} />
         <Tile
           k="Opened at"
           v={fmt(curve.openingPrice)}
           s={`graduates ${fmt(curve.migrationPrice)}`}
         />
-        <Tile k="Raised" v={sol(state.quoteRaised)} s={`of ${sol(state.migrationThreshold)} SOL`} />
+        <Tile
+          k="Raised"
+          v={amount(state.quoteRaised)}
+          s={`of ${amount(state.migrationThreshold)} ${quote.symbol}`}
+        />
         <Tile k="Trades replayed" v={String(replay.swaps)} s={`${replay.fieldsCompared} fields`} />
         <Tile
           k="Fees taken"
-          v={sol(
+          v={amount(
             (
               BigInt(state.feesToProtocol) +
               BigInt(state.feesToPartner) +
               BigInt(state.feesToCreator)
             ).toString(),
           )}
-          s="protocol, partner and creator"
+          s={`${quote.symbol} · protocol, partner and creator`}
         />
       </div>
 
@@ -273,6 +297,22 @@ function Report({ result }: { result: Result }) {
           </tbody>
         </table>
       </section>
+
+      <section className="panel next">
+        <header>
+          <h2>What this proves about the simulator</h2>
+        </header>
+        <p className="prose">
+          The engine that replayed those trades is the same one the simulator runs. Every field it
+          produced for this pool matched what the program recorded, which is the reason to believe a
+          curve it has never seen.
+        </p>
+        <div className="cta-row" style={{ marginTop: 16 }}>
+          <a className="btn btn-ghost" href="/simulate">
+            Design a curve with it
+          </a>
+        </div>
+      </section>
     </div>
   )
 }
@@ -309,7 +349,7 @@ function fmt(value: number): string {
   return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
-function sol(atomic: string): string {
-  const whole = Number(BigInt(atomic)) / 1e9
-  return whole.toLocaleString(undefined, { maximumFractionDigits: whole < 10 ? 2 : 0 })
+function whole(atomic: string, decimals: number): string {
+  const value = Number(BigInt(atomic)) / 10 ** decimals
+  return value.toLocaleString(undefined, { maximumFractionDigits: value < 10 ? 2 : 0 })
 }

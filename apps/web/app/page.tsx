@@ -5,7 +5,8 @@ import { Nav } from '../components/Nav'
  *
  * Written to be specific rather than persuasive: the claims here are ones the
  * repository can be checked against, because the audience is people who will
- * check.
+ * check. Every figure below appears in docs/VALIDATION.md, which the replay
+ * generates rather than a person writing it down.
  */
 export default function Landing() {
   return (
@@ -13,64 +14,75 @@ export default function Landing() {
       <Nav />
 
       <header className="hero">
-        <div className="wrap">
-          <div className="eyebrow">
-            <span className="pin">Meteora DBC</span>
-            <span>Open source · built for the Crypto World&rsquo;s Fair</span>
+        <div className="wrap hero-grid">
+          <div>
+            <div className="eyebrow">
+              <span className="pin">Meteora DBC</span>
+              <span>Open source · built for the Crypto World&rsquo;s Fair</span>
+            </div>
+
+            <h1 className="display">
+              A bonding curve cannot be edited
+              <span className="dim"> once money is on it.</span>
+            </h1>
+
+            <p className="lede">
+              A DBC config fixes the shape of the curve, the fee that defends it and where the
+              launch graduates — before the first trade, and for every trade after. Preflight is
+              where you find out what those numbers do while changing them is still free.
+            </p>
+
+            <div className="cta-row">
+              <a className="btn btn-primary btn-lg" href="/simulate">
+                Open the workstation
+              </a>
+              <a className="btn btn-ghost btn-lg" href="/inspect">
+                Replay a real pool
+              </a>
+            </div>
+            <div className="cta-note" style={{ marginTop: 16 }}>
+              No wallet. Nothing to install. The engine runs in your browser.
+            </div>
           </div>
 
-          <h1 className="display">
-            Launch the curve you meant to launch.
-            <span className="dim"> Not the one you found out about.</span>
-          </h1>
-
-          <p className="lede">
-            A Dynamic Bonding Curve is a mechanism-design decision: the shape of the curve and the
-            fee that defends it decide whether the first thirty seconds belong to a sniper or to
-            your buyers. Today you find out once the money is real. Preflight lets you find out
-            first.
-          </p>
-
-          <div className="cta-row">
-            <a className="btn btn-primary btn-lg" href="/simulate">
-              Simulate a launch
-            </a>
-            <a className="btn btn-ghost btn-lg" href="/inspect">
-              Replay a real pool
-            </a>
-            <span className="cta-note">No wallet. Nothing to install.</span>
-          </div>
+          <aside className="hero-panel">
+            <div className="hero-panel-head">
+              <span>One configuration, three crowds</span>
+              <span className="mono">seed &ldquo;preflight&rdquo;</span>
+            </div>
+            <ul className="crowd-demo">
+              <li>
+                <span className="who">Organic flow only</span>
+                <span className="out">
+                  graduates <b className="good">top holder 21%</b>
+                </span>
+              </li>
+              <li>
+                <span className="who">Four sniper bots</span>
+                <span className="out">
+                  graduates <b className="bad">bots held 71% at their peak</b>
+                </span>
+              </li>
+              <li>
+                <span className="who">Steady profit taking</span>
+                <span className="out">
+                  <b className="bad">stalls at 7 of 50 SOL</b>
+                </span>
+              </li>
+            </ul>
+            <div className="hero-panel-foot">
+              Same curve, same fee, same seed. The only difference is who turned up — and the third
+              one never reaches its threshold.
+            </div>
+          </aside>
         </div>
       </header>
-
-      <section className="section" id="problem">
-        <div className="wrap">
-          <div className="section-head">
-            <div className="kicker">The problem</div>
-            <h2 className="title">Curve parameters are chosen by guesswork</h2>
-            <p>
-              A launch partner picks a starting price, a fee schedule and a graduation threshold,
-              and then discovers what those choices meant from the holder distribution afterwards.
-              There is no undo. Copying someone else&rsquo;s config is the usual answer, which is
-              how a mistake propagates across a whole ecosystem.
-            </p>
-          </div>
-
-          <blockquote className="pull">
-            A sniper bot bought half the float five seconds after one mainnet launch and sold it
-            back fifteen seconds later — at a loss, because the opening fee was set high enough to
-            make being first expensive. That is a curve doing its job. The question Preflight
-            answers is whether yours will.
-            <cite>Observed on a real DBC launch, September 2026</cite>
-          </blockquote>
-        </div>
-      </section>
 
       <section className="section" id="how">
         <div className="wrap">
           <div className="section-head">
-            <div className="kicker">How it works</div>
-            <h2 className="title">Configure, simulate, then decide</h2>
+            <div className="kicker">What it does</div>
+            <h2 className="title">Design the market, then let it be attacked</h2>
           </div>
 
           <div className="grid-3">
@@ -78,27 +90,28 @@ export default function Landing() {
               <div className="step">01 — Configure</div>
               <h3>Describe the launch</h3>
               <p>
-                Curve shape, opening fee, graduation threshold, and what the launch is priced in.
-                Any SPL mint can be the quote asset, so a memecoin in SOL and a token priced in a
-                tokenized equity are the same arithmetic.
+                Curve shape, the supply held back for the graduated pool, the opening fee and
+                whether it decays, where the fee is collected and who receives it. Any SPL mint can
+                be the quote asset, so a memecoin in SOL and a token priced in a tokenized equity
+                are the same arithmetic.
               </p>
             </article>
             <article className="card">
-              <div className="step">02 — Simulate</div>
+              <div className="step">02 — Stress test</div>
               <h3>Let the wrong people show up</h3>
               <p>
-                Snipers buy first and largest. Whales move the price on their own. Organic buyers
-                trickle in and some of them sell. Every run is seeded, so the same inputs always
-                give the same launch and any difference you see is the curve.
+                Pick the crowd by the question it answers: can a bot take the float in the first
+                seconds, what does one whale do to everybody after it, does the raise stall under
+                steady profit taking. Every run is seeded, so the same inputs give the same launch.
               </p>
             </article>
             <article className="card">
-              <div className="step">03 — Read the outcome</div>
-              <h3>See who ends up holding it</h3>
+              <div className="step">03 — Read the tape</div>
+              <h3>See why, not just what</h3>
               <p>
-                Whether it graduated and how long it took, what trading cost, and how the supply was
-                distributed at the end. That last number is the one that is hard to look at after a
-                launch and easy to change before one.
+                Every trade in the order it executed, who bought which stretch of the curve, what
+                each group took out, and the result stated against a pinned baseline — so a change
+                you make is reported as a change rather than as a new number.
               </p>
             </article>
           </div>
@@ -127,15 +140,15 @@ export default function Landing() {
 
           <div className="proof">
             <div>
-              <div className="n">941</div>
-              <div className="l">real mainnet swaps replayed end to end</div>
+              <div className="n">94</div>
+              <div className="l">real mainnet swaps replayed, trade for trade</div>
             </div>
             <div>
-              <div className="n">13</div>
-              <div className="l">of 21 fields per swap are Preflight&rsquo;s own state</div>
+              <div className="n">846</div>
+              <div className="l">field comparisons against what the program recorded</div>
             </div>
             <div>
-              <div className="n">178</div>
+              <div className="n">182</div>
               <div className="l">tests, run before every commit</div>
             </div>
             <div>
@@ -144,14 +157,26 @@ export default function Landing() {
             </div>
           </div>
 
+          <p className="proof-note">
+            Those four figures are the ones in{' '}
+            <a href="https://github.com/Pratikkale26/preflight/blob/main/docs/VALIDATION.md">
+              docs/VALIDATION.md
+            </a>
+            , which the replay writes rather than a person. Separately, five launches recorded from
+            the deployed program are replayed on every test run, comparing twenty-one fields per
+            swap — thirteen of which are Preflight&rsquo;s own state rather than the SDK&rsquo;s
+            arithmetic.
+          </p>
+
           <div className="grid-2" style={{ marginTop: 18 }}>
             <article className="card">
               <h3>Recordings, not assumptions</h3>
               <p>
-                Three launches are recorded from the real program and committed: a plain curve, one
-                with the volatility-driven dynamic fee, and one collecting fees in the token being
-                bought. Each is replayed on every test run. If Meteora upgrades the program, the
-                recordings are marked stale rather than quietly wrong.
+                Five launches are recorded from the real program and committed: a plain curve, one
+                with the volatility-driven dynamic fee, one collecting fees in the token being
+                bought, one with a decaying fee schedule, and one trading for an exact output. Each
+                carries the hash of the bytecode that produced it, so a program upgrade marks it
+                stale rather than leaving it quietly wrong.
               </p>
             </article>
             <article className="card">
@@ -168,14 +193,30 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="section" id="limits">
+        <div className="wrap">
+          <div className="section-head narrow">
+            <div className="kicker">What it is not</div>
+            <h2 className="title">A stress test, not a forecast</h2>
+            <p>
+              Preflight does not predict who will turn up to your launch — nobody can, and a
+              simulator that claimed to would be lying. You choose the crowd. The value is
+              comparative: run the same crowd against two configurations and the difference is the
+              curve, because it is the only thing that changed. Read a single run as a projection
+              and you are reading it wrong.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="section">
         <div className="wrap" style={{ textAlign: 'center' }}>
-          <h2 className="title" style={{ maxWidth: '20ch', margin: '0 auto' }}>
+          <h2 className="title" style={{ maxWidth: '22ch', margin: '0 auto' }}>
             Find out before it matters
           </h2>
           <div className="cta-row" style={{ justifyContent: 'center', marginTop: 26 }}>
             <a className="btn btn-primary btn-lg" href="/simulate">
-              Simulate a launch
+              Open the workstation
             </a>
           </div>
         </div>

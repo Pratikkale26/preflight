@@ -37,6 +37,15 @@ export interface BaselineOptions {
   /** Total supply of the launched token. */
   readonly totalTokenSupply?: number
   /**
+   * Share of the total supply seeded into the graduated DAMM pool rather than
+   * sold on the curve, as a percentage. Raising it leaves less supply for the
+   * curve to sell, so the same raise has to come out of a steeper climb.
+   *
+   * The SDK's curve builder underflows at exactly 50 — swept, and 49 is fine —
+   * so a caller offering this as a control should stop short of it.
+   */
+  readonly percentageSupplyOnMigration?: number
+  /**
    * Enable the volatility-driven dynamic fee on top of the base fee. Off by
    * default so the baseline recording isolates curve mechanics.
    */
@@ -130,7 +139,7 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
       cliffDurationFromMigrationTime: 0,
     },
     activationType: options.activationType ?? ActivationType.Timestamp,
-    percentageSupplyOnMigration: 20,
+    percentageSupplyOnMigration: options.percentageSupplyOnMigration ?? 20,
     migrationQuoteThreshold: options.migrationQuoteThreshold ?? 50,
   })
 }

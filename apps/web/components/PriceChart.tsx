@@ -49,7 +49,7 @@ export function PriceChart({
 
   return (
     <figure style={{ margin: 0 }}>
-      <figcaption style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10 }}>
+      <figcaption style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 10 }}>
         Price per token, in {quoteSymbol}
       </figcaption>
       <svg
@@ -73,7 +73,7 @@ export function PriceChart({
               x2={width - pad.right}
               y1={y(value)}
               y2={y(value)}
-              stroke="var(--border)"
+              stroke="var(--line)"
               strokeWidth="1"
             />
             <text
@@ -81,7 +81,7 @@ export function PriceChart({
               y={y(value) + 4}
               textAnchor="end"
               fontSize="11"
-              fill="var(--text-muted)"
+              fill="var(--ink-3)"
               fontFamily="var(--mono)"
             >
               {fmt(value)}
@@ -120,7 +120,7 @@ export function PriceChart({
               x2={x(hover)}
               y1={pad.top}
               y2={pad.top + plotH}
-              stroke="var(--border-strong)"
+              stroke="var(--line-2)"
               strokeWidth="1"
             />
             <circle
@@ -128,7 +128,7 @@ export function PriceChart({
               cy={y(active.close)}
               r="4.5"
               fill="var(--brand)"
-              stroke="var(--surface-1)"
+              stroke="var(--panel-2)"
               strokeWidth="2"
             />
           </g>
@@ -147,7 +147,7 @@ export function PriceChart({
         ))}
       </svg>
 
-      <div style={{ height: 20, fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 4 }}>
+      <div style={{ height: 20, fontSize: 12.5, color: 'var(--ink-2)', marginTop: 4 }}>
         {active
           ? `${fmt(active.close)} ${quoteSymbol} · high ${fmt(active.high)} · low ${fmt(active.low)}`
           : 'Hover the chart for a point in the launch.'}
@@ -158,9 +158,7 @@ export function PriceChart({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{ padding: '38px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13.5 }}
-    >
+    <div style={{ padding: '38px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13.5 }}>
       {children}
     </div>
   )

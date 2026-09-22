@@ -11,11 +11,7 @@ import type { AgentState } from '@preflight/agents'
  * also named in the table below, so identity never rests on colour alone.
  */
 
-const COLOUR: Record<string, string> = {
-  sniper: 'var(--series-2)',
-  whale: 'var(--series-1)',
-  organic: 'var(--series-3)',
-}
+import { ARCHETYPE_COLOUR as COLOUR } from './TradeTape'
 
 export function HolderChart({
   agents,
@@ -29,7 +25,7 @@ export function HolderChart({
 
   if (total === 0n) {
     return (
-      <div style={{ color: 'var(--text-muted)', fontSize: 13.5, padding: '10px 0' }}>
+      <div style={{ color: 'var(--ink-3)', fontSize: 13.5, padding: '10px 0' }}>
         Nobody is holding the token: no trade completed.
       </div>
     )
@@ -51,21 +47,21 @@ export function HolderChart({
   return (
     <div>
       {/* 2px gaps between segments, so adjacent fills stay separable. */}
-      <div style={{ display: 'flex', gap: 2, height: 30, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 2, height: 12, marginBottom: 16 }}>
         {groups.map((group) => (
           <div
             key={group.archetype}
             title={`${group.archetype}: ${group.share.toFixed(1)}%`}
             style={{
               width: `${group.share}%`,
-              background: COLOUR[group.archetype] ?? 'var(--text-muted)',
+              background: COLOUR[group.archetype] ?? 'var(--ink-3)',
               borderRadius: 4,
             }}
           />
         ))}
       </div>
 
-      <table className="holders">
+      <table className="data">
         <thead>
           <tr>
             <th>Group</th>
@@ -79,7 +75,7 @@ export function HolderChart({
               <td className="name">
                 <span
                   className="swatch"
-                  style={{ background: COLOUR[group.archetype] ?? 'var(--text-muted)' }}
+                  style={{ background: COLOUR[group.archetype] ?? 'var(--ink-3)' }}
                 />
                 {group.archetype}
               </td>

@@ -1,6 +1,6 @@
 import { fetchLivePool, fetchSwapHistory, openingState, replayLaunch } from '@preflight/chain'
 import { priceFromSqrtPrice } from '@preflight/metrics'
-import { Connection } from '@solana/web3.js'
+import { Connection, PublicKey } from '@solana/web3.js'
 import { NextResponse } from 'next/server'
 
 /**
@@ -16,6 +16,32 @@ export const maxDuration = 60
 
 /** Enough to be convincing without making someone wait a minute for a page. */
 const MAX_SIGNATURES = 120
+
+/**
+ * The two quote assets worth naming. Everything else is shown by its mint,
+ * because guessing a ticker from an address is how a page ends up lying.
+ */
+const KNOWN_SYMBOLS: Record<string, string> = {
+  So11111111111111111111111111111111111111112: 'SOL',
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
+}
+
+/**
+ * Read a mint's decimals off the account.
+ *
+ * DBC accepts any SPL mint as quote, so assuming nine of them prices a
+ * USDC-quoted pool a thousand times wrong while still looking like a number.
+ * Decimals sit at offset 44 of the mint layout, which Token and Token-2022
+ * share for the first 82 bytes.
+ */
+async function mintDecimals(connection: Connection, mints: string[]): Promise<number[]> {
+  const accounts = await connection.getMultipleAccountsInfo(mints.map((m) => new PublicKey(m)))
+  return accounts.map((account, index) => {
+    const decimals = account?.data[44]
+    if (decimals === undefined) throw new Error(`Could not read decimals for mint ${mints[index]}.`)
+    return decimals
+  })
+}
 
 function endpoint(): string | null {
   if (process.env['SOLANA_RPC_URL']) return process.env['SOLANA_RPC_URL']
@@ -44,9 +70,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     const swaps = await fetchSwapHistory(connection, address, { limit: MAX_SIGNATURES })
     const report = replayLaunch(address, live.config, swaps)
 
-    const decimals = { base: 6, quote: 9 }
+    const [baseDecimals, quoteDecimals] = await mintDecimals(connection, [
+      live.meta.baseMint,
+      live.meta.quoteMint,
+    ])
     const price = (sqrtPrice: bigint) =>
-      priceFromSqrtPrice(sqrtPrice, decimals.base, decimals.quote)
+      priceFromSqrtPrice(sqrtPrice, baseDecimals!, quoteDecimals!)
 
     return NextResponse.json({
       address,
@@ -55,6 +84,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         quoteMint: live.meta.quoteMint,
         creator: live.meta.creator,
         isMigrated: live.meta.isMigrated,
+      },
+      quote: {
+        mint: live.meta.quoteMint,
+        decimals: quoteDecimals,
+        symbol: KNOWN_SYMBOLS[live.meta.quoteMint] ?? `${live.meta.quoteMint.slice(0, 4)}\u2026`,
       },
       state: {
         price: price(live.state.sqrtPrice),

@@ -8,17 +8,17 @@
  */
 
 :root {
-  --bg: #07080c;
-  --bg-2: #0b0d14;
-  --panel: #0f1118;
-  --panel-2: #14161f;
-  --line: #1b1f2c;
-  --line-2: #242938;
+  --bg: #08090c;
+  --bg-2: #0c0e13;
+  --panel: #0a0b10;
+  --panel-2: #0c0e13;
+  --line: #1a1d27;
+  --line-2: #262a38;
 
-  --ink: #f1f2f7;
-  --ink-2: #a3a7ba;
-  --ink-3: #6b7085;
-  --ink-4: #474c5e;
+  --ink: #eceef4;
+  --ink-2: #9aa0b2;
+  --ink-3: #767d91;
+  --ink-4: #3a4052;
 
   --brand: #8b86f5;
   --brand-2: #a9a4fb;
@@ -34,11 +34,13 @@
 
   --good: #35c08a;
   --warn: #dfa33a;
-  --bad: #ec6b6b;
+  --bad: #e0603f;
 
-  --r: 12px;
-  --r-lg: 16px;
-  --r-xl: 22px;
+  /* Regions separate with a hairline, so a radius is only ever the hint that
+     something is pressable. */
+  --r: 3px;
+  --r-lg: 3px;
+  --r-xl: 4px;
 
   --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -61,9 +63,12 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
-  letter-spacing: -0.006em;
+  /* Instrument Sans is already narrow and its word space is tighter than
+     Inter's; the negative tracking that suited Inter closes the gaps between
+     words here until a sentence reads as one long token. */
+  letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -101,14 +106,14 @@ a {
   top: 0;
   z-index: 40;
   backdrop-filter: blur(14px);
-  background: rgba(7, 8, 12, 0.72);
+  background: rgba(8, 9, 12, 0.78);
   border-bottom: 1px solid var(--line);
 }
 .nav .inner {
   display: flex;
   align-items: center;
   gap: 18px;
-  height: 60px;
+  height: 46px;
 }
 .nav img {
   height: 25px;
@@ -214,10 +219,10 @@ a {
 }
 
 h1.display {
-  font-size: clamp(38px, 5.6vw, 62px);
-  line-height: 1.04;
-  letter-spacing: -0.042em;
-  max-width: 15ch;
+  font-size: clamp(34px, 4.1vw, 52px);
+  line-height: 1.06;
+  letter-spacing: -0.038em;
+  max-width: 17ch;
 }
 h1.display .dim {
   color: var(--ink-3);
@@ -249,8 +254,14 @@ h1.display .dim {
   border-top: 1px solid var(--line);
 }
 .section-head {
-  max-width: 62ch;
   margin-bottom: 40px;
+}
+h2.title,
+.section-head .kicker {
+  max-width: 24ch;
+}
+.section-head.narrow p {
+  max-width: 62ch;
 }
 .kicker {
   font-family: var(--mono);
@@ -266,6 +277,7 @@ h2.title {
 }
 .section-head p {
   margin-top: 15px;
+  max-width: 82ch;
   color: var(--ink-2);
   font-size: 16px;
   line-height: 1.62;
@@ -380,13 +392,29 @@ blockquote.pull cite {
 /* ============ app shell ============ */
 
 .app {
-  padding: 26px 0 90px;
+  padding: 22px 0 80px;
+}
+/* The workstation is three columns of dense readout; a wide monitor should get
+   more tape and more chart, not more margin. */
+.wrap.app {
+  max-width: 1640px;
 }
 .layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 288px minmax(560px, 1fr) 320px;
+  gap: 16px;
   align-items: start;
+}
+@media (max-width: 1440px) {
+  .layout {
+    grid-template-columns: 270px minmax(0, 1fr);
+  }
+  .readout {
+    grid-column: 1 / -1;
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
 }
 @media (max-width: 980px) {
   .layout {
@@ -412,11 +440,10 @@ blockquote.pull cite {
 }
 
 .panel {
-  background: linear-gradient(180deg, var(--panel-2), var(--panel) 66px);
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  padding: 18px;
-  box-shadow: var(--lit), var(--shadow-sm);
+  border-radius: 4px;
+  padding: 16px;
 }
 .panel > header {
   display: flex;
@@ -703,4 +730,855 @@ figcaption {
   text-align: center;
   color: var(--ink-4);
   font-size: 13.5px;
+}
+
+/* ============ the workstation ============ */
+
+/*
+ * Configure, stress test and compare are phases of one screen, so the bar
+ * reads as a process rather than as navigation. The two things that genuinely
+ * leave — mainnet replay and the deploy command — sit past a rule, so nothing
+ * that looks like a step is a dead end.
+ */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.flow ol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.flow li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-4);
+}
+.flow li + li::before {
+  content: '';
+  width: 14px;
+  height: 1px;
+  background: var(--line-2);
+  margin-right: 1px;
+}
+.flow li .n {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+.flow li[aria-current='step'] {
+  color: var(--ink);
+}
+.flow li[aria-current='step'] .n {
+  background: var(--brand-3);
+  border-color: var(--brand-3);
+  color: #fff;
+}
+.flow-rule {
+  flex: 1;
+  min-width: 10px;
+}
+.flow-out {
+  font-size: 12.5px;
+  color: var(--brand-2);
+  border-bottom: 1px solid transparent;
+}
+.flow-out:hover {
+  border-bottom-color: var(--brand-2);
+}
+.flow-cmd {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px 9px;
+}
+
+/* ---- grouped configuration ---- */
+
+.group > header {
+  margin-bottom: 0;
+}
+.group-toggle {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+}
+.group-toggle .chev {
+  font-family: var(--mono);
+  color: var(--ink-4);
+  font-size: 14px;
+  line-height: 1;
+}
+.group-toggle:hover h2 {
+  color: var(--ink-2);
+}
+.group .caption {
+  font-size: 12px;
+  color: var(--ink-4);
+  line-height: 1.5;
+  margin: 10px 0 16px;
+}
+.sub-fields {
+  margin: 0 0 16px;
+  padding: 14px 14px 2px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.sub-fields .hint {
+  padding-bottom: 12px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.toggle input {
+  accent-color: var(--brand-3);
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+/* ---- scenarios ---- */
+
+.seg-wide {
+  width: 100%;
+}
+.seg-wide button {
+  flex: 1;
+}
+.scenarios .asks {
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 15px 0 7px;
+  letter-spacing: -0.012em;
+}
+.scenarios .behaviour {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.disclose {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.disclose:hover {
+  color: var(--ink-2);
+}
+.disclose .mono {
+  font-family: var(--mono);
+  color: var(--ink-4);
+}
+.disclose .tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--warn);
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.scenarios .sub-fields {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+/* ---- the change from the baseline ---- */
+
+.verdict-then {
+  margin-left: auto;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.verdict-then span {
+  display: block;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+  margin-bottom: 3px;
+}
+.linky {
+  all: unset;
+  cursor: pointer;
+  color: var(--brand-2);
+}
+.linky:hover {
+  text-decoration: underline;
+}
+.changes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.changes li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+}
+.changes .what {
+  flex: 1;
+  color: var(--ink-2);
+}
+.changes .mono {
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.changes .from {
+  color: var(--ink-4);
+  text-decoration: line-through;
+}
+.changes .arrow {
+  color: var(--ink-4);
+}
+.changes .to {
+  color: var(--ink);
+}
+
+/* ---- why it went that way ---- */
+
+.why ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.why li {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+.why li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.why .lever {
+  flex: none;
+  max-width: 170px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--ink-4);
+  line-height: 1.45;
+}
+.why .lever::before {
+  content: 'set by ';
+  opacity: 0.55;
+}
+
+/* ---- metrics ---- */
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+  gap: 16px;
+}
+.metrics dl {
+  margin: 0;
+}
+.metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.metrics .metric:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.metric dt {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.metric dt .s {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+.metric dd {
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+.metric dd .v {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.metric dd .v.warn {
+  color: var(--warn);
+}
+.metric dd .v.bad {
+  color: var(--bad);
+}
+.delta {
+  display: block;
+  font-size: 11px;
+  font-family: var(--mono);
+  margin-top: 3px;
+  color: var(--ink-4);
+}
+.delta.good {
+  color: var(--good);
+}
+.delta.bad {
+  color: var(--bad);
+}
+
+/* ---- prose inside the app ---- */
+
+.prose {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
+}
+.prose code,
+.cta-note code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+.next {
+  background: var(--panel);
+}
+
+/* ============ the readout ============ */
+
+.readout {
+  gap: 14px;
+}
+
+.hero-figure {
+  padding: 2px 0 16px;
+}
+.hero-figure .v {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+.hero-figure.small .v {
+  font-size: 22px;
+}
+.hero-figure .v .u {
+  font-size: 0.6em;
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+.hero-figure .l {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 7px;
+}
+.delta-inline {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-4);
+  margin-top: 5px;
+}
+
+.split-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  margin: 2px 0 14px;
+}
+.split-bar span {
+  border-radius: 2px;
+  min-width: 2px;
+}
+
+.group-row dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-row dt .s {
+  display: inline;
+  margin: 0 0 0 4px;
+}
+
+.readout .caption {
+  font-size: 11.5px;
+  color: var(--ink-4);
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+.readout dl + dl {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 4px;
+}
+
+/* ============ the trade tape ============ */
+
+.tape-panel {
+  padding-bottom: 8px;
+}
+.tape-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.tape-filters button {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+.tape-filters button:hover {
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.tape-filters button[aria-pressed='true'] {
+  color: var(--ink);
+  border-color: var(--brand-3);
+  background: var(--halo);
+}
+
+.tape-scroll {
+  max-height: 460px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+table.tape {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+table.tape th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  text-align: left;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+}
+table.tape td {
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(27, 31, 44, 0.55);
+  white-space: nowrap;
+}
+table.tape tr:hover td {
+  background: var(--panel-2);
+}
+table.tape .r {
+  text-align: right;
+}
+table.tape .dim {
+  color: var(--ink-4);
+}
+table.tape .unit {
+  color: var(--ink-4);
+}
+table.tape .buy {
+  color: var(--good);
+}
+table.tape .sell {
+  color: var(--c2);
+}
+table.tape .pf {
+  color: var(--ink-4);
+  margin-left: 4px;
+}
+table.tape td .swatch {
+  display: inline-block;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+
+/* ============ the ownership ribbon ============ */
+
+.ribbon {
+  margin: 12px 0 0;
+}
+.ribbon-track {
+  position: relative;
+  height: 9px;
+  background: var(--bg-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ribbon-track span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.ribbon figcaption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+.ribbon .key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+}
+
+/* ============ export ============ */
+
+.code-block {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  overflow: auto;
+  max-height: 260px;
+  white-space: pre;
+}
+.export-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.export-actions .btn {
+  font-size: 12px;
+  padding: 7px 12px;
+}
+
+/* ============ landing: the hero and its evidence ============ */
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 52px;
+  align-items: start;
+  padding-top: 8px;
+}
+@media (max-width: 1000px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/*
+ * The hero's right half used to be empty. It now carries the argument the
+ * page is making — three runs of one configuration — rather than an
+ * illustration of it.
+ */
+.hero-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px;
+}
+.hero-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.hero-panel-head .mono {
+  font-family: var(--mono);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-4);
+  font-weight: 400;
+}
+.crowd-demo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.crowd-demo li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.crowd-demo .who {
+  color: var(--ink);
+}
+.crowd-demo .out {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-4);
+  text-align: right;
+}
+.crowd-demo .out b {
+  display: block;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.crowd-demo .out b.good {
+  color: var(--good);
+}
+.crowd-demo .out b.bad {
+  color: var(--bad);
+}
+.hero-panel-foot {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.55;
+  padding-top: 14px;
+}
+
+.section-head.narrow {
+  max-width: 62ch;
+}
+.proof-note {
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.6;
+  max-width: 78ch;
+}
+.proof-note a {
+  color: var(--brand-2);
+  border-bottom: 1px solid rgba(169, 164, 251, 0.3);
+}
+
+/* ============ app chrome ============ */
+
+.app-nav .wrap.inner {
+  max-width: 1640px;
+  gap: 22px;
+}
+.app-nav .tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 46px;
+}
+.app-nav .tabs a {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  border-bottom: 2px solid transparent;
+}
+.app-nav .tabs a:hover {
+  color: var(--ink-2);
+}
+.app-nav .tabs a[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--brand);
+}
+.app-nav .status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.app-nav .status.mono {
+  font-family: var(--mono);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.app-nav .status .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+/* ============ the standing evidence ============ */
+
+.evidence table.data td.pool {
+  text-align: left;
+  font-size: 11.5px;
+}
+.evidence table.data td.pool a {
+  color: var(--ink-2);
+}
+.evidence table.data td.pool a:hover {
+  color: var(--brand-2);
+}
+.evidence .total td {
+  border-top: 1px solid var(--line-2);
+  font-family: var(--sans);
+  font-weight: 600;
+}
+.evidence .total td.num {
+  font-family: var(--mono);
+}
+table.data td.ok,
+.panel header .note.ok {
+  color: var(--good);
+}
+.panel header .note.bad {
+  color: var(--bad);
+}
+
+/* ============ compare ============ */
+
+.compare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.compare-head h1 {
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+.compare-head p {
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--ink-3);
+  max-width: 72ch;
+}
+.compare-head code {
+  font-family: var(--mono);
+  color: var(--ink-2);
+}
+.panel h2 .rule,
+.compare-chart .rule {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.compare-chart .ax {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  fill: var(--ink-4);
+}
+.compare-chart figcaption {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.compare-chart .rule.a {
+  background: var(--c1);
+}
+.compare-chart .rule.b {
+  background: var(--c2);
+}
+.compare-chart .key {
+  display: flex;
+  align-items: center;
+}
+.compare-chart .axis-note {
+  margin-left: auto;
+  color: var(--ink-4);
+}
+.compare-field {
+  margin-bottom: 14px;
+}
+.compare-field .label {
+  font-size: 12.5px;
+}
+table.difference td.name {
+  font-family: var(--sans);
+  color: var(--ink-2);
+}
+table.difference td.worse {
+  color: var(--bad);
+}
+.flow li a {
+  color: inherit;
+  border-bottom: 1px solid transparent;
+}
+.flow li a:hover {
+  border-bottom-color: var(--ink-4);
 }
