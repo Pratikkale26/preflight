@@ -7,6 +7,8 @@
  * than from an endpoint.
  */
 
+export { deployConfig, deployPool } from './deploy.js'
+export type { DeployedConfig, DeployedPool, PoolMetadata } from './deploy.js'
 export { decodeLivePool, decodePoolConfig, decodeVirtualPool } from './decode.js'
 export type { LivePool } from './decode.js'
 export {

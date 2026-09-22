@@ -55,6 +55,15 @@ make that testable rather than assertable:
 The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
 itself, not documentation.
 
+- **Live pools, read from the chain.** A running launch can be loaded from mainnet and simulated
+  forward from where it stands. One of the pools captured for the tests had already graduated, and
+  it came to rest at exactly its migration price with a quote reserve one lamport over the
+  threshold — the same rounding the recorded fixture shows, reached independently.
+- **The curve you simulate is the curve you launch.** `pnpm deploy:devnet` builds a config,
+  validates it, deploys it, reads the accounts back, and checks the deployed curve against what was
+  predicted. The most recent run is recorded in
+  [`docs/devnet-deployment.json`](docs/devnet-deployment.json).
+
 The first of these already runs. `packages/core/fixtures/oracle/baseline.json` is a recording of a
 complete launch made by executing the real bytecode: four buys walking the curve up, then an
 oversized buy that partial-fills, halts exactly at the migration price and hands back the remainder.
