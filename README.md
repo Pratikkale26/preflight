@@ -50,8 +50,8 @@ make that testable rather than assertable:
   field against it.
 - **Historical replay as validation.** The program emits complete swap results on-chain, so
   replaying a real launch and diffing every recorded field turns published history into a
-  correctness test. A launch executed on mainnet by people with no connection to this project
-  replays with every field reproduced exactly — see [`docs/VALIDATION.md`](docs/VALIDATION.md).
+  correctness test. Launches executed on mainnet by people with no connection to this project
+  replay with every field reproduced exactly — see [`docs/VALIDATION.md`](docs/VALIDATION.md).
 
 The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
 itself, not documentation.

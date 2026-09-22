@@ -29,7 +29,7 @@ const load = (name: string): OracleFixture =>
  * periods, so the tracker's state machine is exercised rather than sitting at
  * zero.
  */
-const FIXTURES = ['baseline', 'dynamic-fee', 'output-fee'] as const
+const FIXTURES = ['baseline', 'dynamic-fee', 'output-fee', 'exact-out'] as const
 
 /** The field-by-field comparison, named so failures say which number is wrong. */
 const SWAP_RESULT_FIELDS = [
@@ -79,12 +79,15 @@ describe.each(FIXTURES)('engine vs deployed program: %s', (name) => {
         slot: BigInt(swap.clock.slot),
         unixTimestamp: BigInt(swap.clock.unixTimestamp),
       }
+      // The recorded amount is an input for exact-in and partial fills and an
+      // output for exact-out. Passing it in the wrong role prices a different
+      // trade, which is exactly the mistake a live replay caught.
       const { result, stateAfter } = pool.swap(BigInt(swap.amountIn), TradeDirection.QuoteToBase, {
         // Derived from the config rather than hardcoded, so the recording also
         // checks that the right clock is being read.
         currentPoint: VirtualPool.currentPoint(config, clock),
         currentTimestamp: clock.unixTimestamp,
-        partialFill: swap.kind === 'partialFill',
+        mode: swap.kind,
       })
 
       for (const field of SWAP_RESULT_FIELDS) {
@@ -118,12 +121,15 @@ describe.each(FIXTURES)('engine vs deployed program: %s', (name) => {
           unixTimestamp: BigInt(swap.clock.unixTimestamp),
         }),
         currentTimestamp: BigInt(swap.clock.unixTimestamp),
-        partialFill: swap.kind === 'partialFill',
+        mode: swap.kind,
       })
     }
 
-    // The recording ends with a partial fill that takes the pool over the line.
-    expect(pool.isCurveComplete).toBe(true)
-    expect(pool.state.quoteReserve).toBeGreaterThanOrEqual(config.migrationQuoteThreshold)
+    // Most recordings end with a partial fill that takes the pool over the
+    // line; the exact-out one ends mid-curve on purpose.
+    if (fixture.swaps.at(-1)?.kind === 'partialFill') {
+      expect(pool.isCurveComplete).toBe(true)
+      expect(pool.state.quoteReserve).toBeGreaterThanOrEqual(config.migrationQuoteThreshold)
+    }
   })
 })

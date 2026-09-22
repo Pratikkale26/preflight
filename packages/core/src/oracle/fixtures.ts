@@ -23,7 +23,7 @@ import { type Json, toJson } from './serialize.js'
 
 export interface SwapRecord {
   readonly step: number
-  readonly kind: 'exactIn' | 'partialFill'
+  readonly kind: 'exactIn' | 'partialFill' | 'exactOut'
   readonly swapBaseForQuote: boolean
   readonly amountIn: string
   readonly clock: { readonly slot: string; readonly unixTimestamp: string }
@@ -205,6 +205,97 @@ export async function buildOutputFeeFixture(): Promise<OracleFixture> {
     buys: [1n, 5n, 12n, 20n].map((n) => n * 1_000_000_000n),
     finalAmount: 40n * 1_000_000_000n,
   })
+}
+
+/**
+ * A launch where some buyers name what they want rather than what they spend.
+ *
+ * Exact-out is the one swap mode the engine priced the wrong way round until a
+ * live replay stopped on it, so it earns a recording of its own.
+ */
+export async function buildExactOutFixture(): Promise<OracleFixture> {
+  const seed = 'preflight/exact-out'
+  const oracle = await DbcOracle.create({ seed })
+  const configParams = baselineConfig()
+
+  const config = await oracle.createConfig(configParams)
+  const handle = await oracle.createPool(config, {
+    name: 'Preflight Exact Out',
+    symbol: 'PFX',
+    uri: 'https://example.invalid/pfx.json',
+  })
+  await oracle.fundQuote(oracle.payer.publicKey, 1_000n * 1_000_000_000n)
+
+  const initialPoolState = toJson(await oracle.poolState(handle.pool))
+  const swaps: SwapRecord[] = []
+
+  const record = (
+    kind: SwapRecord['kind'],
+    amount: bigint,
+    observation: Awaited<ReturnType<DbcOracle['swap']>>,
+  ): void => {
+    swaps.push({
+      step: swaps.length,
+      kind,
+      swapBaseForQuote: false,
+      amountIn: amount.toString(),
+      clock: {
+        slot: observation.clock.slot.toString(),
+        unixTimestamp: observation.clock.unixTimestamp.toString(),
+      },
+      event: toJson(observation.event),
+      legacyEvent: toJson(observation.legacyEvent),
+      poolStateAfter: toJson(observation.poolStateAfter),
+    })
+  }
+
+  // Alternating, so the recording proves the two modes agree about the state
+  // they hand each other rather than only that each works in isolation.
+  record(
+    'exactIn',
+    2_000_000_000n,
+    await oracle.swap(handle, {
+      amountIn: 2_000_000_000n,
+      swapBaseForQuote: false,
+    }),
+  )
+
+  for (const amountOut of [50_000_000_000_000n, 90_000_000_000_000n]) {
+    oracle.advanceSeconds(30n)
+    record(
+      'exactOut',
+      amountOut,
+      await oracle.swapExactOut(handle, {
+        amountOut,
+        swapBaseForQuote: false,
+      }),
+    )
+  }
+
+  oracle.advanceSeconds(30n)
+  record(
+    'exactIn',
+    8_000_000_000n,
+    await oracle.swap(handle, {
+      amountIn: 8_000_000_000n,
+      swapBaseForQuote: false,
+    }),
+  )
+
+  return {
+    name: 'exact-out',
+    description:
+      'A launch mixing exact-in buys with exact-out buys, where the trader ' +
+      'names the amount of token they want and the curve decides the cost.',
+    programId: oracle.programId,
+    programSha256: dbcProgramSha256(),
+    seed,
+    quoteDecimals: oracle.quoteDecimals,
+    configParams: toJson(configParams),
+    configAccount: toJson(await oracle.configState(config)),
+    initialPoolState,
+    swaps,
+  }
 }
 
 export async function buildBaselineFixture(): Promise<OracleFixture> {

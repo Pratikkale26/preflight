@@ -13,28 +13,20 @@ happened rather than against an expectation someone wrote down.
 
 Every field is compared exactly. There are no tolerances.
 
-| Pool                                           | Swaps | Fields compared | Divergences |
-| ---------------------------------------------- | ----: | --------------: | ----------: |
-| `26tyUtzCPREhKTFXENakpXdZTsSvoegY34svMB7sGbrL` |     8 |              72 |           0 |
-| **Total**                                      | **8** |          **72** |       **0** |
+| Pool                                           |   Swaps | Fields compared | Divergences |
+| ---------------------------------------------- | ------: | --------------: | ----------: |
+| `26tyUtzCPREhKTFXENakpXdZTsSvoegY34svMB7sGbrL` |       8 |              72 |           0 |
+| `CCKDcwbrtmNPR3ELw8DeDr6z5yiij7FbEUaRE2ncAMq2` |      86 |             774 |           0 |
+| `WYkuaMBp1QAseKifQFwgSYjayvBSUDzY1FAvJtaEMob`  |     847 |            7623 |           0 |
+| **Total**                                      | **941** |        **8469** |       **0** |
 
-The recorded launch includes a sell as well as buys, and ends in a partial fill
-that graduated the curve — the trade most likely to be modelled wrongly, since
-an exact-in swap that would cross the migration price is rejected outright
-rather than part-filled.
+These launches include sells as well as buys, swaps that state the amount wanted
+rather than the amount spent, and the partial fill that graduates a curve — the
+trade most likely to be modelled wrongly, since an exact-in swap that would
+cross the migration price is rejected outright rather than part-filled.
 
-### What the engine does not yet model
-
-Replaying pools beyond the recorded one surfaced a real limit. A DBC swap can
-be made _exact-out_ — stating the amount wanted and letting the curve decide
-what it costs — and the engine only prices trades from what is offered. The
-event's first parameter means different things in the two cases, so reading it
-as an input would price a trade that never happened.
-
-The replay stops when it meets one and says so, rather than skipping it and
-reporting agreement on the rest. A replay that omits what it cannot handle and
-then claims no divergences is worse than one that fails, because it reads as a
-pass. One live pool replayed nine swaps exactly before stopping on exactly this.
+`pnpm replay` reproduces the committed launch offline. Given a pool address and
+an archival endpoint it replays any live pool: `pnpm replay <poolAddress>`.
 
 ### One thing this caught
 

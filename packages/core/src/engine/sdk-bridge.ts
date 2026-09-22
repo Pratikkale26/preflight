@@ -1,5 +1,6 @@
 import {
   getSwapResultFromExactInput,
+  getSwapResultFromExactOutput,
   getSwapResultFromPartialInput,
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import BN from 'bn.js'
@@ -111,6 +112,7 @@ function fromSdkResult(result: {
 export interface QuoteArgs {
   readonly config: EngineConfig
   readonly state: PoolState
+  /** Offered for an exact-in or partial fill; demanded for an exact-out. */
   readonly amountIn: bigint
   readonly feeMode: FeeMode
   readonly tradeDirection: TradeDirection
@@ -142,6 +144,27 @@ export function quoteExactIn(args: QuoteArgs): SwapResult {
  */
 export function quotePartialFill(args: QuoteArgs): SwapResult {
   const result = getSwapResultFromPartialInput(
+    toSdkPool(args.state) as any,
+    toSdkConfig(args.config) as any,
+    bn(args.amountIn),
+    args.feeMode,
+    args.tradeDirection,
+    bn(args.currentPoint),
+    args.eligibleForFirstSwapWithMinFee,
+  )
+  return fromSdkResult(result as never)
+}
+
+/**
+ * Exact-out: the trader states what they want and the curve decides the cost.
+ *
+ * The reverse of every other path here, which price a trade from what is
+ * offered. Worth keeping distinct rather than folding in, because the argument
+ * changes meaning: the same number is an input in one mode and an output in the
+ * other, and reading it wrongly prices a trade that never happened.
+ */
+export function quoteExactOut(args: QuoteArgs): SwapResult {
+  const result = getSwapResultFromExactOutput(
     toSdkPool(args.state) as any,
     toSdkConfig(args.config) as any,
     bn(args.amountIn),

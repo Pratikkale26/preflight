@@ -88,7 +88,7 @@ const totalFields = results.reduce((n, r) => n + r.fieldsCompared, 0)
 const totalDiv = results.reduce((n, r) => n + r.divergences.length, 0)
 const totalUnsupported = results.reduce((n, r) => n + r.unsupported.length, 0)
 
-if (addresses.length === 0) {
+if (true) {
   writeFileSync(
     join(root, 'docs/VALIDATION.md'),
     `# Validation
@@ -115,10 +115,13 @@ ${results
   .join('\n')}
 | **Total** | **${totalSwaps}** | **${totalFields}** | **${totalDiv}** |
 
-The recorded launch includes a sell as well as buys, and ends in a partial fill
-that graduated the curve — the trade most likely to be modelled wrongly, since
-an exact-in swap that would cross the migration price is rejected outright
-rather than part-filled.
+These launches include sells as well as buys, swaps that state the amount wanted
+rather than the amount spent, and the partial fill that graduates a curve — the
+trade most likely to be modelled wrongly, since an exact-in swap that would
+cross the migration price is rejected outright rather than part-filled.
+
+\`pnpm replay\` reproduces the committed launch offline. Given a pool address and
+an archival endpoint it replays any live pool: \`pnpm replay <poolAddress>\`.
 
 ### One thing this caught
 

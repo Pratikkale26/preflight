@@ -14,6 +14,18 @@ import { type RecordedSwap, SwapMode } from './history.js'
  * is not a simulator anyone should size a launch with.
  */
 
+/**
+ * How the recorded swap should be replayed.
+ *
+ * A swap that left input unconsumed was a partial fill whatever it was labelled,
+ * and one that consumed everything behaves the same under either input mode.
+ */
+function modeOf(swap: RecordedSwap): 'exactIn' | 'partialFill' | 'exactOut' {
+  if (swap.swapMode === SwapMode.ExactOut) return 'exactOut'
+  if (swap.swapMode === SwapMode.PartialFill || swap.result.amountLeft > 0n) return 'partialFill'
+  return 'exactIn'
+}
+
 /** Fields compared on every swap. Named so a divergence says what diverged. */
 const COMPARED = [
   'includedFeeInputAmount',
@@ -101,19 +113,6 @@ export function replayLaunch(
   let replayed = 0
 
   for (const [index, swap] of swaps.entries()) {
-    if (swap.swapMode === SwapMode.ExactOut) {
-      // The engine prices a trade from what is offered. An exact-out swap
-      // states what is demanded and lets the curve decide the input, which is
-      // a different calculation and is not implemented. Replaying it as though
-      // amount0 were an input would price a trade that never happened.
-      unsupported.push({
-        step: index,
-        signature: swap.signature,
-        reason: 'exact-out swaps are not modelled by the engine',
-      })
-      break
-    }
-
     const clock = { slot: BigInt(swap.slot), unixTimestamp: swap.currentTimestamp }
     const direction =
       swap.tradeDirection === 0 ? TradeDirection.BaseToQuote : TradeDirection.QuoteToBase
@@ -123,9 +122,9 @@ export function replayLaunch(
       actual = engine.swap(swap.amount0, direction, {
         currentPoint: VirtualPool.currentPoint(config, clock),
         currentTimestamp: swap.currentTimestamp,
-        // A recorded swap that left input unconsumed was a partial fill; one
-        // that consumed everything behaves identically either way.
-        partialFill: swap.result.amountLeft > 0n || swap.swapMode === 1,
+        // `amount0` is an input under the first two modes and an output under
+        // the third, so the mode has to travel with it.
+        mode: modeOf(swap),
       }).result
     } catch (error) {
       divergences.push({

@@ -12,6 +12,7 @@ export type { OracleOptions, PoolHandle, SwapObservation } from './harness.js'
 export {
   buildBaselineFixture,
   buildDynamicFeeFixture,
+  buildExactOutFixture,
   buildOutputFeeFixture,
   dbcProgramSha256,
 } from './fixtures.js'

@@ -1,4 +1,4 @@
-import { quoteExactIn, quotePartialFill } from './sdk-bridge.js'
+import { quoteExactIn, quoteExactOut, quotePartialFill } from './sdk-bridge.js'
 import {
   ActivationType,
   type EngineConfig,
@@ -61,6 +61,15 @@ function getDeltaBinId(binStepU128: bigint, sqrtPriceA: bigint, sqrtPriceB: bigi
   return ((priceRatio - ONE_Q64) / binStepU128) * 2n
 }
 
+/**
+ * How a trade is specified.
+ *
+ * `exactIn` and `partialFill` price from what is offered; they differ only in
+ * whether an amount the curve cannot absorb is an error or is handed back.
+ * `exactOut` is the other way round — the trader names what they want.
+ */
+export type SwapMode = 'exactIn' | 'partialFill' | 'exactOut'
+
 export interface SwapOptions {
   /** Slot or unix second, per the config's activation type. */
   readonly currentPoint: bigint
@@ -107,6 +116,15 @@ export class VirtualPool {
     return this.swap(amountIn, TradeDirection.QuoteToBase, options)
   }
 
+  /**
+   * Buy a stated amount of the base token, whatever it costs.
+   *
+   * `amountOut` is what the trader receives; the curve decides the input.
+   */
+  buyExactOut(amountOut: bigint, options: SwapOptions): SwapOutcome {
+    return this.swap(amountOut, TradeDirection.QuoteToBase, { ...options, mode: 'exactOut' })
+  }
+
   /** Sell base for quote. */
   sell(amountIn: bigint, options: SwapOptions & { partialFill?: boolean }): SwapOutcome {
     return this.swap(amountIn, TradeDirection.BaseToQuote, options)
@@ -115,7 +133,7 @@ export class VirtualPool {
   swap(
     amountIn: bigint,
     tradeDirection: TradeDirection,
-    options: SwapOptions & { partialFill?: boolean },
+    options: SwapOptions & { partialFill?: boolean; mode?: SwapMode },
   ): SwapOutcome {
     const stateBefore = this.current
     const feeMode = getFeeMode(
@@ -137,7 +155,13 @@ export class VirtualPool {
       currentPoint: options.currentPoint,
       eligibleForFirstSwapWithMinFee: this.config.enableFirstSwapWithMinFee && !decayed.hasSwap,
     }
-    const result = options.partialFill ? quotePartialFill(args) : quoteExactIn(args)
+    const mode: SwapMode = options.mode ?? (options.partialFill ? 'partialFill' : 'exactIn')
+    const result =
+      mode === 'exactOut'
+        ? quoteExactOut(args)
+        : mode === 'partialFill'
+          ? quotePartialFill(args)
+          : quoteExactIn(args)
 
     this.current = this.applySwapResult(
       decayed,

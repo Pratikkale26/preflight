@@ -22,6 +22,13 @@ import {
  * Nothing here invents instructions. Meteora's SDK builds them; this signs and
  * sends, then reads the result back so the deployment can be checked rather
  * than assumed.
+ *
+ * Deliberately not unit tested. Every line of it sends a transaction, and
+ * standing in a mock for the network would test the mock. It is exercised by
+ * `pnpm deploy:devnet`, which deploys a real config and pool, reads both
+ * accounts back and compares them against what was predicted beforehand. The
+ * result of that run, with its signatures, is committed in
+ * `docs/devnet-deployment.json` and can be checked on an explorer.
  */
 
 export interface DeployedConfig {

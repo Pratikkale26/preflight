@@ -301,6 +301,41 @@ export class DbcOracle {
     }
   }
 
+  /**
+   * Buy a stated amount of the base token, whatever it costs.
+   *
+   * The reverse of every other path: the trader names what they want and the
+   * program works out the input. Worth recording because the swap event's
+   * first parameter is the *output* here and the input everywhere else, which
+   * is a difference that silently prices a different trade.
+   */
+  async swapExactOut(
+    handle: PoolHandle,
+    params: { amountOut: bigint; swapBaseForQuote: boolean; owner?: Keypair },
+  ): Promise<SwapObservation> {
+    const owner = params.owner ?? this.payer
+    const clock = this.clock()
+    const tx = await this.client.pool.swap2({
+      owner: owner.publicKey,
+      pool: handle.pool,
+      swapMode: SwapMode.ExactOut,
+      amountOut: new BN(params.amountOut.toString()),
+      maximumAmountIn: new BN('18446744073709551615'),
+      swapBaseForQuote: params.swapBaseForQuote,
+      referralTokenAccount: null,
+    })
+    const meta = await sendInstructions(this.svm, tx.instructions, owner)
+    const events = decodeAnchorEvents(meta, this.eventCoder)
+    return {
+      event: findEvent(events, 'evtSwap2')?.data ?? null,
+      legacyEvent: findEvent(events, 'evtSwap')?.data ?? null,
+      events,
+      poolStateAfter: await this.client.state.getPool(handle.pool),
+      clock,
+      meta,
+    }
+  }
+
   /** Decoded config account, as the program stores it. */
   async configState(config: PublicKey): Promise<unknown> {
     return this.client.state.getPoolConfig(config)
