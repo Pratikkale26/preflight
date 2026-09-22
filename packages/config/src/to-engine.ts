@@ -1,4 +1,11 @@
-import { type ConfigParameters, getCurveBreakdown } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import {
+  type ConfigParameters,
+  getBaseTokenForSwap,
+  getCurveBreakdown,
+  getMigrationBaseToken,
+  getSwapAmountWithBuffer,
+  type MigrationOption,
+} from '@meteora-ag/dynamic-bonding-curve-sdk'
 import type { EngineConfig } from '@preflight/core'
 
 /**
@@ -50,6 +57,32 @@ export function engineConfigFromParams(params: ConfigParameters): EngineConfig {
     collectFeeMode: params.collectFeeMode,
     activationType: params.activationType,
     creatorTradingFeePercentage: params.creatorTradingFeePercentage,
+    // The program derives these rather than accepting them, so they are worked
+    // out the same way here: what the curve has to sell, and what is held back
+    // to seed the pool at graduation. Their sum is the vault's opening balance.
+    swapBaseAmount: big(
+      getSwapAmountWithBuffer(
+        getBaseTokenForSwap(params.sqrtStartPrice, finalSqrtPrice, params.curve),
+        params.sqrtStartPrice,
+        params.curve,
+      ),
+    ),
+    migrationBaseThreshold: big(
+      getMigrationBaseToken(
+        params.migrationQuoteThreshold,
+        finalSqrtPrice,
+        params.migrationOption as MigrationOption,
+      ),
+    ),
+    // A launch that states its supply is treated as fixed by the program, and
+    // the vault is minted exactly that rather than the sum of the parts.
+    preMigrationTokenSupply: params.tokenSupply
+      ? big(params.tokenSupply.preMigrationTokenSupply)
+      : 0n,
+    fixedTokenSupply: params.tokenSupply !== null && params.tokenSupply !== undefined,
+    lockedVestingAmount:
+      big(params.lockedVesting.cliffUnlockAmount) +
+      big(params.lockedVesting.amountPerPeriod) * big(params.lockedVesting.numberOfPeriod),
     enableFirstSwapWithMinFee: Boolean(params.enableFirstSwapWithMinFee),
     poolFees: {
       baseFee: {

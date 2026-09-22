@@ -56,6 +56,24 @@ function num(source: Json, key: string, path: string): number {
   throw new Error(`expected a number at ${path}.${key}, got ${JSON.stringify(raw)?.slice(0, 60)}`)
 }
 
+/**
+ * Total base a vesting schedule holds back.
+ *
+ * `LockedVestingParams::get_total_amount`: the cliff unlock plus every period.
+ */
+function lockedVestingTotal(value: unknown): bigint {
+  if (typeof value !== 'object' || value === null) return 0n
+  const vesting = value as Record<string, unknown>
+  const read = (key: string): bigint => {
+    const raw = vesting[key]
+    if (typeof raw === 'bigint') return raw
+    if (typeof raw === 'number') return BigInt(raw)
+    const text = String(raw ?? '0')
+    return /^-?\d+$/.test(text) ? BigInt(text) : 0n
+  }
+  return read('cliffUnlockAmount') + read('amountPerPeriod') * read('numberOfPeriod')
+}
+
 export function decodeConfig(value: unknown): EngineConfig {
   const config = obj(value, 'config')
   const poolFees = obj(config['poolFees'], 'config.poolFees')
@@ -84,6 +102,11 @@ export function decodeConfig(value: unknown): EngineConfig {
     collectFeeMode: num(config, 'collectFeeMode', 'config'),
     activationType: num(config, 'activationType', 'config'),
     creatorTradingFeePercentage: num(config, 'creatorTradingFeePercentage', 'config'),
+    swapBaseAmount: big(config, 'swapBaseAmount', 'config'),
+    migrationBaseThreshold: big(config, 'migrationBaseThreshold', 'config'),
+    preMigrationTokenSupply: big(config, 'preMigrationTokenSupply', 'config'),
+    fixedTokenSupply: num(config, 'fixedTokenSupplyFlag', 'config') !== 0,
+    lockedVestingAmount: lockedVestingTotal(config['lockedVestingConfig']),
     enableFirstSwapWithMinFee: num(config, 'enableFirstSwapWithMinFee', 'config') !== 0,
     poolFees: {
       baseFee: {

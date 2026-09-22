@@ -1,4 +1,10 @@
-import { type EngineConfig, type PoolState, TradeDirection, VirtualPool } from '@preflight/core'
+import {
+  type EngineConfig,
+  openingBaseReserve,
+  type PoolState,
+  TradeDirection,
+  VirtualPool,
+} from '@preflight/core'
 
 import { type RecordedSwap, SwapMode } from './history.js'
 
@@ -68,11 +74,9 @@ export interface ReplayReport {
 export function openingState(config: EngineConfig, activationPoint: bigint): PoolState {
   return {
     sqrtPrice: config.sqrtStartPrice,
-    // The engine only ever subtracts base, and the curve stops at its migration
-    // price long before this could run out. The real figure lives on the token
-    // vault rather than in the config, and none of the compared fields depend
-    // on it.
-    baseReserve: 2n ** 62n,
+    // What the program would actually put in the vault: everything the curve
+    // has to sell, plus what is held back to seed the pool at graduation.
+    baseReserve: openingBaseReserve(config),
     quoteReserve: 0n,
     protocolBaseFee: 0n,
     protocolQuoteFee: 0n,

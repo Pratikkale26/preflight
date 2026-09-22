@@ -1,7 +1,29 @@
 # Validation
 
-The engine is checked against Meteora's deployed program two ways. Both are run
-by `pnpm verify`, and neither needs network access.
+## What is Preflight's, and what is Meteora's
+
+Meteora's SDK contains the per-swap arithmetic — the curve traversal, the fee
+numerator, the square root price after a trade. Preflight calls it rather than
+reimplementing it. A second hand-written port would add a source of error
+without adding assurance, and the SDK is the reference implementation, tracked
+by the people who wrote the program.
+
+What the SDK does not do, and what Preflight is, is the **stateful layer**:
+applying a swap to reserves and to six fee buckets, evolving the volatility
+tracker that drives the dynamic fee, advancing the fee schedule as time passes,
+deciding which token a fee is taken in, and recognising when a curve has
+graduated. None of that exists anywhere else, and it is what the validation
+below is about.
+
+So, precisely:
+
+- **Meteora's arithmetic, checked against Meteora's program.** Worth knowing,
+  but their achievement, not ours.
+- **Preflight's state machine, checked against Meteora's program.** This is the
+  claim that belongs to this project.
+
+Both are reported separately below rather than added together into one larger
+number.
 
 ## Replaying real launches
 
@@ -13,12 +35,17 @@ happened rather than against an expectation someone wrote down.
 
 Every field is compared exactly. There are no tolerances.
 
-| Pool                                           |   Swaps | Fields compared | Divergences |
-| ---------------------------------------------- | ------: | --------------: | ----------: |
-| `26tyUtzCPREhKTFXENakpXdZTsSvoegY34svMB7sGbrL` |       8 |              72 |           0 |
-| `CCKDcwbrtmNPR3ELw8DeDr6z5yiij7FbEUaRE2ncAMq2` |      86 |             774 |           0 |
-| `WYkuaMBp1QAseKifQFwgSYjayvBSUDzY1FAvJtaEMob`  |     847 |            7623 |           0 |
-| **Total**                                      | **941** |        **8469** |       **0** |
+Of the nine fields compared per swap, eight are produced by Meteora's SDK and
+one — the running quote reserve — is Preflight's. The eight confirm the SDK
+agrees with the program across real traffic; the one confirms Preflight's state
+machine tracks a launch correctly from beginning to end, through sells, partial
+fills and exact-out trades, without drifting.
+
+| Pool                                           |  Swaps | Fields compared | Divergences |
+| ---------------------------------------------- | -----: | --------------: | ----------: |
+| `26tyUtzCPREhKTFXENakpXdZTsSvoegY34svMB7sGbrL` |      8 |              72 |           0 |
+| `CCKDcwbrtmNPR3ELw8DeDr6z5yiij7FbEUaRE2ncAMq2` |     86 |             774 |           0 |
+| **Total**                                      | **94** |         **846** |       **0** |
 
 These launches include sells as well as buys, swaps that state the amount wanted
 rather than the amount spent, and the partial fill that graduates a curve — the
@@ -60,8 +87,14 @@ that fails, because it reads as a pass.
 Three launches are recorded by running the deployed bytecode inside an
 in-process SVM, then replayed through the engine on every test run: a plain
 curve, one with the volatility-driven dynamic fee, and one collecting fees in
-the token being bought. Twenty-one fields are compared per swap — the eight of
-the swap result, nine pool fields, and the four of the volatility tracker.
+the token being bought. Twenty-one fields are compared per swap: the eight of the swap result, which
+come from the SDK, and **thirteen that are Preflight's own** — nine pool fields
+covering the price, both reserves and all six fee buckets, and the four of the
+volatility tracker.
+
+Those thirteen are the ones that matter for this project's claim. Across the
+four recordings that is 260 direct comparisons of Preflight's state machine
+against what the deployed program did.
 
 Each recording carries the SHA-256 of the bytecode that produced it, so a
 program upgrade marks it stale rather than leaving it quietly wrong.

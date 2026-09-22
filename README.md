@@ -39,6 +39,17 @@ the first few snipers, graduate at a valuation nobody intended, or never graduat
 
 Preflight closes that loop before the launch instead of after it.
 
+## What Preflight is, precisely
+
+Meteora's SDK already contains the per-swap arithmetic — the curve traversal, the fee numerator,
+the price after a trade. Preflight calls it rather than reimplementing it: a second hand-written
+port would add a source of error without adding assurance.
+
+What the SDK cannot do is carry state forward. It prices one swap against a state you hand it. It
+cannot tell you who holds the token after thirty traders have been through. **That stateful
+layer — reserves, six fee buckets, the volatility tracker, the fee schedule, migration — is what
+Preflight is**, and it is what the validation below is about.
+
 ## The correctness claim
 
 A simulator is only useful if it behaves like the thing it simulates. Preflight's approach is to
@@ -47,11 +58,14 @@ make that testable rather than assertable:
 - **Differential testing against the real program.** The deployed DBC bytecode
   (`dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN`) is executed in-process via
   [LiteSVM](https://github.com/LiteSVM/litesvm), and the engine's output is compared field by
-  field against it.
+  field against it. Twenty-one fields per swap, of which **thirteen are Preflight's own** — the
+  price, both reserves, all six fee buckets and the volatility tracker.
 - **Historical replay as validation.** The program emits complete swap results on-chain, so
   replaying a real launch and diffing every recorded field turns published history into a
   correctness test. Launches executed on mainnet by people with no connection to this project
-  replay with every field reproduced exactly — see [`docs/VALIDATION.md`](docs/VALIDATION.md).
+  replay with every field reproduced exactly, including the running reserve Preflight tracks
+  itself — see [`docs/VALIDATION.md`](docs/VALIDATION.md), which separates what is Preflight's
+  from what is Meteora's rather than adding them together.
 
 The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
 itself, not documentation.

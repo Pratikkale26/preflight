@@ -24,6 +24,7 @@ export {
   BaseFeeMode,
   CollectFeeMode,
   getFeeMode,
+  openingBaseReserve,
   TradeDirection,
 } from './engine/types.js'
 export type {

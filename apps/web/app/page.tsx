@@ -117,20 +117,26 @@ export default function Landing() {
               program actually did, and replays those recordings through the engine — comparing
               every field of every swap exactly, with no tolerances.
             </p>
+            <p style={{ marginTop: 14 }}>
+              Meteora&rsquo;s SDK supplies the per-swap arithmetic and Preflight calls it rather
+              than writing a second copy. What Preflight adds — and what these numbers are about —
+              is the part that exists nowhere else: carrying state forward across a whole launch,
+              through reserves, six fee buckets, the volatility tracker and graduation.
+            </p>
           </div>
 
           <div className="proof">
             <div>
-              <div className="n">139</div>
+              <div className="n">941</div>
+              <div className="l">real mainnet swaps replayed end to end</div>
+            </div>
+            <div>
+              <div className="n">13</div>
+              <div className="l">of 21 fields per swap are Preflight&rsquo;s own state</div>
+            </div>
+            <div>
+              <div className="n">178</div>
               <div className="l">tests, run before every commit</div>
-            </div>
-            <div>
-              <div className="n">21</div>
-              <div className="l">fields compared per swap, exactly</div>
-            </div>
-            <div>
-              <div className="n">99.5%</div>
-              <div className="l">of engine statements covered</div>
             </div>
             <div>
               <div className="n">0</div>

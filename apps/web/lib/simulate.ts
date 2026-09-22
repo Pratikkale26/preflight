@@ -9,7 +9,7 @@ import {
   USDC,
   validateLaunchConfig,
 } from '@preflight/config'
-import type { EngineConfig, PoolState } from '@preflight/core'
+import { type EngineConfig, openingBaseReserve, type PoolState } from '@preflight/core'
 import {
   buildReport,
   curveShape,
@@ -82,9 +82,10 @@ export interface SimulationOutput {
 function openingPool(config: EngineConfig): PoolState {
   return {
     sqrtPrice: config.sqrtStartPrice,
-    // Base sitting on the curve. The engine only ever subtracts from this, and
-    // the curve stops at its migration price long before it could run out.
-    baseReserve: 2n ** 63n,
+    // What the program would put in the vault: the base the curve has to sell
+    // plus what is held back for the graduated pool. Derived rather than
+    // invented, so the reserve shown to a reader is the real figure.
+    baseReserve: openingBaseReserve(config),
     quoteReserve: 0n,
     protocolBaseFee: 0n,
     protocolQuoteFee: 0n,

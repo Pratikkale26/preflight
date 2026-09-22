@@ -81,6 +81,22 @@ export interface EngineConfig {
   readonly activationType: number
   readonly poolFees: PoolFeesConfig
   readonly creatorTradingFeePercentage: number
+  /**
+   * Base tokens the curve can sell, and those held back to seed the pool at
+   * graduation. Their sum is what the vault holds when a pool opens.
+   *
+   * Carried so that a simulated pool starts from the supply the program would
+   * actually give it. Inventing a large number instead works — nothing in the
+   * pricing depends on it — but it means the base reserve shown to anyone
+   * reading the result is fiction.
+   */
+  readonly swapBaseAmount: bigint
+  readonly migrationBaseThreshold: bigint
+  /** Supply the launch commits to up front, when it commits to one. */
+  readonly preMigrationTokenSupply: bigint
+  readonly fixedTokenSupply: boolean
+  /** Base locked into a vesting schedule rather than left in the vault. */
+  readonly lockedVestingAmount: bigint
   readonly enableFirstSwapWithMinFee: boolean
 }
 
@@ -97,6 +113,20 @@ export interface VolatilityTracker {
 }
 
 /** The mutable half of a pool: everything a swap changes. */
+/**
+ * Base the vault holds when a pool opens, before anything is sold.
+ *
+ * Ported from `PoolConfig::get_initial_base_supply`. A launch that fixes its
+ * supply gets exactly that; otherwise the program mints what the curve has to
+ * sell, plus what seeds the graduated pool, plus whatever is locked into
+ * vesting. The two differ by the rounding in the swap amount's buffer, so
+ * taking one rule for both is wrong by a small amount that never settles.
+ */
+export function openingBaseReserve(config: EngineConfig): bigint {
+  if (config.fixedTokenSupply) return config.preMigrationTokenSupply
+  return config.swapBaseAmount + config.migrationBaseThreshold + config.lockedVestingAmount
+}
+
 export interface PoolState {
   readonly sqrtPrice: bigint
   readonly baseReserve: bigint
