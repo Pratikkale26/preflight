@@ -11,12 +11,17 @@ packages/
   core      simulation engine — raw atomic units only
   config    curve construction, validation, quote-asset descriptor, presets
   agents    seeded agent-based market simulation
-  metrics   traces to metrics, including fiat-denominated views
-  replay    on-chain ingestion and differential replay
-  cli       headless runner
+  metrics   traces to metrics, including decimal-denominated views
+  chain     on-chain ingestion, differential replay, devnet deployment
 apps/
-  web       user interface
+  web       the workstation
+scripts/
+            program dumping, devnet deploy, replay recording
 ```
+
+`chain` is the only package that touches the network, and `apps/web` reaches mainnet solely
+through its own route so that the RPC key stays server-side. Everything else — the engine, the
+agents, the metrics, the whole simulator the browser runs — is offline arithmetic.
 
 ## The central invariant
 
@@ -207,3 +212,34 @@ against a 6-decimal mint is wrong by a factor of 1000, and nothing in the config
 
 `pnpm verify` runs typecheck, format check, and tests, and must pass before every commit. There is
 no CI; verification is local and deliberate.
+
+## The workstation
+
+`apps/web` is three screens over one pure function. `lib/simulate.ts` is the only place the app
+builds a configuration, runs a launch and shapes the result; the pages read what it returns and
+render it. That function is synchronous and has no I/O, which is what makes comparison free: the
+Compare screen is two calls with one seed.
+
+| Screen            | Route       | What it answers                                   |
+| ----------------- | ----------- | ------------------------------------------------- |
+| Design + simulate | `/simulate` | What does this configuration do, and why          |
+| Compare           | `/compare`  | Which of these two configurations should I launch |
+| Verify            | `/inspect`  | Does the engine agree with the chain              |
+
+Three things in the results are worth naming because they are not summary statistics and cannot
+be recovered from them:
+
+- **The trade tape** — every trade in the order it executed. A sniper taking a third of the float
+  at t=0 and selling it back at t=41 is one line here and is invisible in every aggregate.
+- **The ownership ribbon** — which stretch of the raise each group bought through. A holder
+  breakdown says who owns the token; this says where they got it, which is the fixable part.
+- **Why it went that way** — sentences generated from the trace, each naming the parameter that
+  governs it. Nothing in that panel is inferred; every clause is a field of a recorded step.
+
+Comparison against a pinned baseline is preferred to comparison against the previous keystroke,
+which would report noise on a dragged slider.
+
+The categorical palette is validated rather than chosen: every pair is checked for separation
+under each colour-vision deficiency against the surface it sits on. The design the workstation is
+drawn from proposed an orange and an amber that fail that check, so the existing trio was kept and
+the compare chart dashes its second series, because identity should not rest on hue alone.

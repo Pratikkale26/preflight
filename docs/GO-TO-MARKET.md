@@ -108,6 +108,25 @@ be inventing traction.
   assumption the whole project rests on and it is the one most worth arguing
   about.
 
+## What the simulation does not claim
+
+Preflight does not predict turnout. The user picks the crowd, so a result is
+never a forecast — it is a controlled experiment, and its value is entirely
+comparative: the same crowd against two configurations isolates the curve,
+because the curve is the only thing that changed. This is worth saying plainly
+rather than leaving a reader to discover it, because the alternative reading —
+that these are projections — is both flattering and wrong.
+
+The mechanics underneath are not a choice. The per-swap arithmetic, the fee
+schedule and the volatility tracker are the program's, verified trade for trade
+against mainnet. Only turnout is assumed.
+
+The weakest part is that the crowd is not calibrated against real launches. The
+repository holds 94 replayed mainnet swaps and does not yet ask whether the
+simulated organic buyer resembles a real one. Deriving size distributions and
+inter-arrival times from replayed launches, and offering a calibrated preset
+beside the hand-set ones, is the most valuable unbuilt thing here.
+
 ## The risk worth naming
 
 Preflight is used **once per launch**. It is a tool, not a habit, and that

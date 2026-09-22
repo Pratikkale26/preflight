@@ -35,6 +35,19 @@ Recorded here because the failures are more informative than the successes.
 - An exact-out swap read as exact-in, which prices a trade that never happened
 - A fabricated opening base reserve, which broke no test because nothing in the
   pricing depended on it — but made every reserve shown to a reader fiction
+- Chart components written against a stylesheet vocabulary that did not exist,
+  so a whole panel rendered as an invisible bar above an unstyled table
+- Fees summed across the quote and base buckets and labelled SOL, which is only
+  right when fees are collected in the quote — exposing the other mode made it
+  wrong by four orders of magnitude
+- A replay page that assumed every pool is priced in SOL, pricing a USDC pool a
+  thousand times wrong under a ticker it does not use
+- A landing page claiming ten times the replayed swaps its own generated doc
+  records, because the doc was regenerated with fewer pools and the page was not
+- The opening fee doing nothing: raising it forty-fold moved sniper capture by
+  two points, because the simulated bot could not see the fee and bought at t=0
+  regardless. The lever the product was named after had no effect, and only a
+  sensitivity sweep showed it
 - A validation claim that added Meteora's arithmetic and Preflight's state
   machine into one larger number
 

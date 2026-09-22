@@ -20,15 +20,14 @@ Dynamic Bonding Curves (DBC). It lets a launcher configure a curve, simulate adv
 organic market behaviour against it, measure the outcome, validate the simulation against real
 on-chain behaviour, and only then deploy.
 
-> **Status: early development.** The repository is public from its first commit so that the work is
-> visible as it happens.
+> **Status.** The repository is public from its first commit so that the work is visible as it
+> happens.
 >
-> **What runs today:** the oracle — Meteora's deployed program executing in-process — and the
-> simulation engine, which replays two recorded launches bit-exactly, every field, no tolerances.
-> There is also a configuration layer: curve presets, a validator that agrees with the program about
-> what it would reject, and the read-outs a launcher acts on. Tests cover SOL-, stablecoin- and
-> equity-quoted launches. **What does not exist yet:** the agent simulation, the metrics, and the
-> interface.
+> **What runs today:** the engine and its oracle — Meteora's deployed program executing
+> in-process — the agent simulation, the metrics, and the web workstation. Five recorded launches
+> replay bit-exactly on every test run, and 94 real mainnet swaps replay with every field
+> reproduced. **What does not exist yet:** any path that signs a transaction from the browser, the
+> deprecated rate-limiter fee mode, and post-graduation surplus accounting.
 
 ## Why
 
@@ -64,12 +63,9 @@ make that testable rather than assertable:
   replaying a real launch and diffing every recorded field turns published history into a
   correctness test. Launches executed on mainnet by people with no connection to this project
   replay with every field reproduced exactly, including the running reserve Preflight tracks
-  itself — see [`docs/VALIDATION.md`](docs/VALIDATION.md), which separates what is Preflight's
-  from what is Meteora's rather than adding them together.
-
-The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
-itself, not documentation.
-
+  itself: **94 swaps, 846 field comparisons, no divergences** — see
+  [`docs/VALIDATION.md`](docs/VALIDATION.md), which separates what is Preflight's from what is
+  Meteora's rather than adding them together.
 - **Live pools, read from the chain.** A running launch can be loaded from mainnet and simulated
   forward from where it stands. One of the pools captured for the tests had already graduated, and
   it came to rest at exactly its migration price with a quote reserve one lamport over the
@@ -79,10 +75,32 @@ itself, not documentation.
   predicted. The most recent run is recorded in
   [`docs/devnet-deployment.json`](docs/devnet-deployment.json).
 
-The first of these already runs. `packages/core/fixtures/oracle/baseline.json` is a recording of a
-complete launch made by executing the real bytecode: four buys walking the curve up, then an
-oversized buy that partial-fills, halts exactly at the migration price and hands back the remainder.
-That last trade is the one a naive simulator gets wrong, and it is now pinned to a number.
+The source of truth is the [DBC program](https://github.com/MeteoraAg/dynamic-bonding-curve)
+itself, not documentation.
+
+All four run. `packages/core/fixtures/oracle/baseline.json` is a recording of a complete launch
+made by executing the real bytecode: four buys walking the curve up, then an oversized buy that
+partial-fills, halts exactly at the migration price and hands back the remainder. That last trade
+is the one a naive simulator gets wrong, and it is pinned to a number. Four more recordings cover
+the dynamic fee, fees collected in the output token, exact-out swaps, and a fee decaying
+exponentially on a schedule counted in slots.
+
+## What the simulation is, and is not
+
+Preflight does not predict who will turn up to a launch, and a tool that claimed to would be
+lying. You choose the crowd. The value is comparative: run the same crowd against two
+configurations and the difference is the curve, because the curve is the only thing that changed.
+
+The participants are deliberate caricatures — a bot that buys first and largest, a buyer big
+enough to move the price alone, and small frequent flow that sometimes sells — because a small set
+of legible behaviours answers "how does this curve behave when the worst buyer shows up" better
+than an elaborate model whose output nobody can attribute to a cause.
+
+They do see what a real trader sees. The scheduled fee is published in the config account, so
+agents are shown it, and a sniper that will not pay more than a given fee to be first is the
+reason a fee schedule has any effect in the simulation at all. Before that it did not: raising the
+opening fee forty-fold moved sniper capture by two points, because the bot bought at t=0 whatever
+the price of admission was.
 
 ## Quote-asset agnostic by construction
 
@@ -107,13 +125,25 @@ pnpm install
 pnpm dev
 ```
 
-Then open <http://localhost:3000>. Pick a quote asset, move the fee or the
-graduation threshold, change who turns up, and the launch re-runs as you type —
-the engine is plain arithmetic and runs in the browser, so nothing round-trips
-to a server.
+Then open <http://localhost:3000>. There are three screens:
+
+- **Design + simulate** — group the configuration the way a market is designed, pick the crowd by
+  the question it answers, and read the trade tape, the ownership ribbon and what the launch came
+  to. The engine is plain arithmetic and runs in the browser, so the launch re-runs as you type and
+  nothing round-trips to a server. The screen ends by exporting the exact `buildCurve` argument
+  that produced the run.
+- **Compare** — two configurations side by side. Seed, quote asset, supply and crowd are forced to
+  match, so every row of the difference table is attributable to the configuration and nothing
+  else.
+- **Verify** — the committed mainnet replay as a standing table, and an address box for replaying
+  any pool of your own.
 
 The same seed always produces the same launch. That is what makes two curves
 comparable: any difference you see is the configuration, not the dice.
+
+Reading a live pool needs an RPC endpoint. Copy `.env.example` to `.env` and set
+`HELIUS_API_KEY` or `SOLANA_RPC_URL`; the web app reads the workspace-root file.
+Everything else, including the whole simulator, works offline.
 
 ### Checking it
 
@@ -131,8 +161,8 @@ the program binaries are committed for exactly that reason.
 pnpm programs:dump   # refresh the committed bytecode from mainnet (needs .env)
 ```
 
-Copy `.env.example` to `.env` and add an RPC endpoint if you want to re-dump the
-programs. Nothing else needs it.
+Copy `.env.example` to `.env` and add an RPC endpoint to re-dump the programs,
+replay a live pool, or deploy to devnet. The test suite needs none of it.
 
 ## About this project
 
