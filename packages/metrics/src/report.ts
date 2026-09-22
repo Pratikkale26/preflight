@@ -132,7 +132,7 @@ export function buildReport(input: ReportInput): LaunchReport {
     feesTotal: feesToProtocol + feesToPartner + feesToCreator,
     concentration: concentration(trace.agents),
     volatility: volatilityOf(prices),
-    ...slippageOf(steps, priceAt),
+    ...slippageOf(steps, priceAt, baseDecimals, quoteDecimals),
     candles: candlesOf(steps, priceAt, input.bucketSeconds ?? 30n),
   }
 }
@@ -156,14 +156,25 @@ function volatilityOf(prices: readonly number[]): number {
 /**
  * How far each trade's realised price sat from the price showing beforehand.
  *
- * Computed from exact amounts rather than from the displayed price, so it
- * reflects what the trader actually got, including the fee they paid.
+ * Computed from the exact amounts that changed hands rather than from a
+ * displayed price, so it reflects what the trader actually got, fee included.
+ *
+ * Both sides have to be in the same units. The amounts are atomic and the two
+ * tokens rarely share a precision, so the ratio is scaled by the decimal
+ * difference before being compared against a price per whole token. Skipping
+ * that compares quote-per-atomic with quote-per-token and reports slippage in
+ * the tens of thousands of percent — wrong to any reader, but a perfectly
+ * finite number, so a checks-for-NaN test sails past it.
  */
 function slippageOf(
   steps: readonly TraceStep[],
   priceAt: (sqrtPrice: bigint) => number,
+  baseDecimals: number,
+  quoteDecimals: number,
 ): { averageSlippage: number; worstSlippage: number } {
   const slippages: number[] = []
+  const baseScale = 10n ** BigInt(baseDecimals)
+  const quoteScale = 10n ** BigInt(quoteDecimals)
 
   for (const step of steps) {
     const spot = priceAt(step.poolAfter.sqrtPrice)
@@ -173,8 +184,10 @@ function slippageOf(
     const received = step.result.outputAmount
     if (paid === 0n || received === 0n) continue
 
-    const effective =
-      step.direction === TradeDirection.QuoteToBase ? ratio(paid, received) : ratio(received, paid)
+    // Quote per whole base token, however the trade was oriented.
+    const [quoteAmount, baseAmount] =
+      step.direction === TradeDirection.QuoteToBase ? [paid, received] : [received, paid]
+    const effective = ratio(quoteAmount * baseScale, baseAmount * quoteScale)
     if (effective <= 0) continue
 
     slippages.push(Math.abs(effective - spot) / spot)

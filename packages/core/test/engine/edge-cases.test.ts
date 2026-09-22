@@ -111,3 +111,31 @@ describe('a clock that goes backwards', () => {
     expect(pool.state.quoteReserve).toBeGreaterThan(0n)
   })
 })
+
+describe('decoding accepts what the SDK hands back', () => {
+  /** Stands in for BN: decimal `toString`, hex `toJSON`. */
+  class HexJsonNumber {
+    constructor(private readonly value: bigint) {}
+    toString(): string {
+      return this.value.toString()
+    }
+    toJSON(): string {
+      return this.value.toString(16)
+    }
+  }
+
+  it('reads a number-like object, not just a string', () => {
+    const account = structuredClone(fixture.configAccount) as Record<string, unknown>
+    const original = decodeConfig(account).sqrtStartPrice
+    account['sqrtStartPrice'] = new HexJsonNumber(original)
+    expect(decodeConfig(account).sqrtStartPrice).toBe(original)
+  })
+
+  it('describes a rejected value in decimal, not in hex', () => {
+    const account = structuredClone(fixture.configAccount) as Record<string, unknown>
+    account['sqrtStartPrice'] = { toString: () => 'not a number' }
+    // A hex rendering here would make a legitimate value look like nonsense and
+    // send someone hunting for the wrong problem.
+    expect(() => decodeConfig(account)).toThrow(/not a number/)
+  })
+})

@@ -19,13 +19,33 @@ function obj(value: unknown, path: string): Json {
   return value as Json
 }
 
-/** Read a numeric field that was serialised as a decimal string. */
+/**
+ * Read a numeric field.
+ *
+ * Accepts the decimal strings a recording stores and the BN objects the SDK
+ * hands back, because the same decoder is used for both. BN's `toString` is
+ * decimal, unlike its `toJSON`, which is hex — a difference worth naming, since
+ * the hex form is what shows up in an error message and makes a perfectly good
+ * value look like nonsense.
+ */
 function big(source: Json, key: string, path: string): bigint {
   const raw = source[key]
   if (typeof raw === 'bigint') return raw
   if (typeof raw === 'number') return BigInt(raw)
   if (typeof raw === 'string' && /^-?\d+$/.test(raw)) return BigInt(raw)
-  throw new Error(`expected an integer at ${path}.${key}, got ${JSON.stringify(raw)?.slice(0, 60)}`)
+  if (typeof raw === 'object' && raw !== null && 'toString' in raw) {
+    const text = String(raw)
+    if (/^-?\d+$/.test(text)) return BigInt(text)
+  }
+  throw new Error(`expected an integer at ${path}.${key}, got ${describe(raw)}`)
+}
+
+/** Render a rejected value legibly, without BN's hex `toJSON` confusing things. */
+function describe(value: unknown): string {
+  if (typeof value === 'object' && value !== null && 'toString' in value) {
+    return `"${String(value).slice(0, 40)}"`
+  }
+  return JSON.stringify(value)?.slice(0, 60) ?? String(value)
 }
 
 /** Read a field that is a plain JSON number in the recording. */

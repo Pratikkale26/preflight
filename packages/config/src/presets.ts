@@ -52,6 +52,10 @@ export interface BaselineOptions {
    * partner, as a percentage. Zero means the partner takes all of it.
    */
   readonly creatorTradingFeePercentage?: number
+  /** Base fee at launch, in basis points. The program allows 25 to 9900. */
+  readonly startingFeeBps?: number
+  /** Base fee once the schedule has run its course. Defaults to the start. */
+  readonly endingFeeBps?: number
 }
 
 /**
@@ -76,8 +80,8 @@ export function baselineConfig(options: BaselineOptions = {}): ConfigParameters 
       baseFeeParams: {
         baseFeeMode: BaseFeeMode.FeeSchedulerLinear,
         feeSchedulerParam: {
-          startingFeeBps: 100,
-          endingFeeBps: 100,
+          startingFeeBps: options.startingFeeBps ?? 100,
+          endingFeeBps: options.endingFeeBps ?? options.startingFeeBps ?? 100,
           numberOfPeriod: 0,
           totalDuration: 0,
         },

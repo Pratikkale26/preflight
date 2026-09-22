@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { organic, runScenario, sniper, whale } from '@preflight/agents'
-import { SOL } from '@preflight/config'
+import { SOL, USDC } from '@preflight/config'
 import { decodeConfig, decodePoolState } from '@preflight/core'
 import { type OracleFixture } from '@preflight/core/oracle'
 import { describe, expect, it } from 'vitest'
@@ -168,6 +168,23 @@ describe('a launch report', () => {
     expect(report.volatility).toBeGreaterThan(0)
     expect(Number.isFinite(report.averageSlippage)).toBe(true)
     expect(report.worstSlippage).toBeGreaterThanOrEqual(report.averageSlippage)
+  })
+
+  it('reports slippage as a plausible fraction, not a unit mix-up', () => {
+    // The realised price is computed from atomic amounts while the spot price
+    // is per whole token. Comparing them without the decimal adjustment gives
+    // slippage in the tens of thousands of percent — a number obviously wrong
+    // to a reader but perfectly finite, so an is-it-a-number check misses it.
+    expect(report.averageSlippage).toBeLessThan(1)
+    expect(report.worstSlippage).toBeLessThan(2)
+    expect(report.averageSlippage).toBeGreaterThan(0)
+  })
+
+  it('measures slippage the same way whatever the token precisions', () => {
+    // Nine-decimal base against a six-decimal quote is the reverse adjustment.
+    const other = buildReport({ trace, config, baseDecimals: 9, quoteAsset: USDC })
+    expect(other.averageSlippage).toBeLessThan(1)
+    expect(other.worstSlippage).toBeLessThan(2)
   })
 
   it('is as reproducible as the trace it came from', () => {
