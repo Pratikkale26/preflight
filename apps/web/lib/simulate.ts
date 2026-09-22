@@ -10,7 +10,12 @@ import {
   validateLaunchConfig,
 } from '@preflight/config'
 import type { EngineConfig, PoolState } from '@preflight/core'
-import { buildReport, type LaunchReport } from '@preflight/metrics'
+import {
+  buildReport,
+  curveShape,
+  type CurveShapePoint,
+  type LaunchReport,
+} from '@preflight/metrics'
 
 /**
  * Runs a launch in the browser.
@@ -65,6 +70,8 @@ export interface SimulationOutput {
   readonly report: LaunchReport
   /** Final holdings per participant, for the concentration breakdown. */
   readonly agents: ReturnType<typeof runScenario>['agents']
+  /** The curve as designed, before fees or traders. */
+  readonly shape: readonly CurveShapePoint[]
   readonly findings: ReturnType<typeof validateLaunchConfig>['findings']
   readonly valid: boolean
   readonly derived: ReturnType<typeof deriveLaunchMetrics>
@@ -147,6 +154,7 @@ export function simulate(inputs: LaunchInputs): SimulationOutput {
   return {
     report: buildReport({ trace, config, baseDecimals: 6, quoteAsset }),
     agents: trace.agents,
+    shape: curveShape(config, 6, quoteAsset.decimals),
     findings: validation.findings,
     valid: validation.valid,
     derived,

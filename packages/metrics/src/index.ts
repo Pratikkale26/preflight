@@ -9,6 +9,8 @@
 
 export { buildReport } from './report.js'
 export type { Candle, LaunchReport, ReportInput } from './report.js'
+export { curveShape } from './curve-shape.js'
+export type { CurvePoint as CurveShapePoint } from './curve-shape.js'
 export { concentration, gini } from './concentration.js'
 export type { Concentration } from './concentration.js'
 export { priceFromSqrtPrice, ratio } from './price.js'
