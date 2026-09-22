@@ -58,6 +58,9 @@ describe('a live mainnet pool', () => {
     expect(state.quoteReserve).toBeGreaterThan(0n)
     expect(state.hasSwap).toBe(true)
     expect(meta.baseMint).toMatch(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)
+    // The quote mint is on the config, not the pool — the pool records only a
+    // vault — so this catches reading it from the wrong account.
+    expect(meta.quoteMint).toMatch(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)
 
     // The price must sit inside the curve it was launched with, or something
     // has been decoded into the wrong field.

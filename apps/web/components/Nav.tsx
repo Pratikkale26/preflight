@@ -12,6 +12,9 @@ export function Nav({ cta = true }: { cta?: boolean }) {
         <a className="link" href="/#proof">
           Correctness
         </a>
+        <a className="link" href="/inspect">
+          Replay a real pool
+        </a>
         <a className="link" href="https://github.com/Pratikkale26/preflight">
           GitHub
         </a>

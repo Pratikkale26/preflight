@@ -7,6 +7,7 @@ export default {
     '@preflight/config',
     '@preflight/agents',
     '@preflight/metrics',
+    '@preflight/chain',
   ],
   webpack(config) {
     // Those packages are Node ESM, so their internal imports carry a .js

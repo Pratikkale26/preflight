@@ -25,6 +25,7 @@ export interface LivePool {
   /** What the program stores beyond what the engine needs. */
   readonly meta: {
     readonly baseMint: string
+    /** Taken from the config: the pool account records a vault, not a mint. */
     readonly quoteMint: string
     readonly creator: string
     readonly isMigrated: boolean
@@ -66,7 +67,9 @@ export function decodeVirtualPool(data: Buffer): {
     },
     meta: {
       baseMint: String(pool['baseMint']),
-      quoteMint: String(pool['quoteMint']),
+      // The pool holds a quote *vault*; which mint that vault is for lives on
+      // the config, and is filled in by the caller that has both.
+      quoteMint: '',
       creator: String(pool['creator']),
       isMigrated: Number(pool['isMigrated']) !== 0,
       activationPoint: big('activationPoint'),
@@ -88,5 +91,10 @@ export function decodePoolConfig(data: Buffer): EngineConfig {
 /** Decode both halves of a live pool. */
 export function decodeLivePool(poolData: Buffer, configData: Buffer): LivePool {
   const { state, meta } = decodeVirtualPool(poolData)
-  return { config: decodePoolConfig(configData), state, meta }
+  const decodedConfig = coder().decode('poolConfig', configData) as Record<string, unknown>
+  return {
+    config: decodeConfig(decodedConfig),
+    state,
+    meta: { ...meta, quoteMint: String(decodedConfig['quoteMint'] ?? '') },
+  }
 }

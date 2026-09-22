@@ -35,8 +35,8 @@ export default function Landing() {
             <a className="btn btn-primary btn-lg" href="/simulate">
               Simulate a launch
             </a>
-            <a className="btn btn-ghost btn-lg" href="https://github.com/Pratikkale26/preflight">
-              Read the source
+            <a className="btn btn-ghost btn-lg" href="/inspect">
+              Replay a real pool
             </a>
             <span className="cta-note">No wallet. Nothing to install.</span>
           </div>
