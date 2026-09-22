@@ -7,6 +7,15 @@
  * than from an endpoint.
  */
 
+export {
+  decodeSwapsFromTransaction,
+  fetchSwapHistory,
+  orderOfExecution,
+  SwapMode,
+} from './history.js'
+export type { RecordedSwap } from './history.js'
+export { openingState, replayLaunch } from './replay.js'
+export type { Divergence, ReplayReport } from './replay.js'
 export { deployConfig, deployPool } from './deploy.js'
 export type { DeployedConfig, DeployedPool, PoolMetadata } from './deploy.js'
 export { decodeLivePool, decodePoolConfig, decodeVirtualPool } from './decode.js'

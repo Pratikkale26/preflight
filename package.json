@@ -26,7 +26,8 @@
     "programs:check": "node scripts/dump-programs.mjs --check",
     "programs:dump": "node scripts/dump-programs.mjs",
     "verify": "pnpm typecheck && pnpm format:check && pnpm programs:check && pnpm test",
-    "deploy:devnet": "tsx scripts/deploy-devnet.mjs"
+    "deploy:devnet": "tsx scripts/deploy-devnet.mjs",
+    "replay": "tsx scripts/replay.mjs"
   },
   "devDependencies": {
     "@preflight/chain": "workspace:*",

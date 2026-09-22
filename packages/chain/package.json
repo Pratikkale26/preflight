@@ -14,7 +14,8 @@
     "@meteora-ag/dynamic-bonding-curve-sdk": "^1.5.12",
     "@preflight/core": "workspace:*",
     "@solana/web3.js": "^1.99.0",
-    "bn.js": "^5.2.2"
+    "bn.js": "^5.2.2",
+    "bs58": "^6.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.2.0"
