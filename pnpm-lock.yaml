@@ -21,6 +21,15 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@26.6.2)(supports-color@7.2.0)
 
+  packages/agents:
+    dependencies:
+      '@preflight/config':
+        specifier: workspace:*
+        version: link:../config
+      '@preflight/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/config:
     dependencies:
       '@meteora-ag/dynamic-bonding-curve-sdk':
