@@ -20,7 +20,27 @@ import type { Agent, AgentContext, TradeIntent } from './types.js'
  * arrive next, the curve is too cheap at the start, and that is exactly the
  * thing worth seeing before launch rather than after.
  */
-export function sniper(id: string, options: { size: bigint; exitMultiple: number }): Agent {
+export function sniper(
+  id: string,
+  options: {
+    size: bigint
+    exitMultiple: number
+    /**
+     * The most a sniper will pay to get in, as a fraction. Above this it waits
+     * rather than bidding.
+     *
+     * This is the whole point of a fee scheduler, and without it the schedule
+     * is decoration: a bot that buys at t=0 whatever the fee is cannot be
+     * deterred by making t=0 expensive. A sniper that waits is not a sniper
+     * that was stopped — it is one that arrives after the cheap end of the
+     * curve has already been sold to somebody else, which is the outcome the
+     * fee was bought for.
+     *
+     * Left undefined, the sniper ignores the fee, which is the old behaviour.
+     */
+    maxEntryFee?: number
+  },
+): Agent {
   return {
     id,
     archetype: 'sniper',
@@ -45,6 +65,15 @@ export function sniper(id: string, options: { size: bigint; exitMultiple: number
       }
 
       if (self.trades > 0 || self.quoteBalance < options.size) return null
+
+      // Too expensive to be first: sit the round out and look again. Whether
+      // the fee ever falls far enough is the configuration's business, not the
+      // agent's — under a flat fee this waits forever, which is the correct
+      // behaviour and is exactly what a flat high fee is for.
+      if (options.maxEntryFee !== undefined && context.baseFeeFraction > options.maxEntryFee) {
+        return null
+      }
+
       // In first, ahead of everyone.
       return {
         direction: TradeDirection.QuoteToBase,

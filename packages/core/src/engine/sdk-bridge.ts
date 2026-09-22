@@ -1,4 +1,5 @@
 import {
+  getBaseFeeNumerator,
   getSwapResultFromExactInput,
   getSwapResultFromExactOutput,
   getSwapResultFromPartialInput,
@@ -174,4 +175,34 @@ export function quoteExactOut(args: QuoteArgs): SwapResult {
     args.eligibleForFirstSwapWithMinFee,
   )
   return fromSdkResult(result as never)
+}
+
+/**
+ * The base fee a trade would pay at this point on the clock.
+ *
+ * The swap functions apply this internally and do not report it, but a trader
+ * can read the config account and work out today's fee before deciding to
+ * trade — so an agent that cannot see it is blinder than a real one, not more
+ * conservative. Taken from the SDK's own scheduler rather than recomputed, for
+ * the same reason the swap math is.
+ *
+ * `FEE_DENOMINATOR` is 1e9; the caller divides.
+ */
+export function baseFeeNumeratorAt(
+  config: EngineConfig,
+  currentPoint: bigint,
+  activationPoint: bigint,
+): bigint {
+  const { baseFee } = config.poolFees
+  return big(
+    getBaseFeeNumerator(
+      bn(baseFee.cliffFeeNumerator),
+      baseFee.firstFactor,
+      bn(baseFee.secondFactor),
+      bn(baseFee.thirdFactor),
+      baseFee.baseFeeMode,
+      bn(currentPoint),
+      bn(activationPoint),
+    ),
+  )
 }

@@ -290,7 +290,14 @@ export function simulate(inputs: LaunchInputs): SimulationOutput {
     maxSteps: 600,
     participants: [
       ...Array.from({ length: crowd.snipers }, (_, i) => ({
-        agent: sniper(`sniper-${i}`, { size: budget / 6n, exitMultiple: 1.6 }),
+        agent: sniper(`sniper-${i}`, {
+          size: budget / 6n,
+          exitMultiple: 1.6,
+          // A bot targeting +60% will not hand a fifth of that back at the
+          // door. Above this it waits for the schedule to bring the fee down,
+          // and under a flat fee it waits for good.
+          maxEntryFee: 0.03,
+        }),
         funding: budget,
       })),
       ...Array.from({ length: crowd.whales }, (_, i) => ({

@@ -1,4 +1,4 @@
-import { quoteExactIn, quoteExactOut, quotePartialFill } from './sdk-bridge.js'
+import { baseFeeNumeratorAt, quoteExactIn, quoteExactOut, quotePartialFill } from './sdk-bridge.js'
 import {
   ActivationType,
   type EngineConfig,
@@ -128,6 +128,18 @@ export class VirtualPool {
   /** Sell base for quote. */
   sell(amountIn: bigint, options: SwapOptions & { partialFill?: boolean }): SwapOutcome {
     return this.swap(amountIn, TradeDirection.BaseToQuote, options)
+  }
+
+  /**
+   * The base fee a trade would pay at this point on the clock, as a fraction.
+   *
+   * Excludes the dynamic fee, which depends on volatility the caller cannot
+   * predict; this is the scheduled part, which is published in the config and
+   * which a trader can therefore work out in advance. `FEE_DENOMINATOR` is 1e9.
+   */
+  baseFeeFraction(currentPoint: bigint): number {
+    const numerator = baseFeeNumeratorAt(this.config, currentPoint, this.current.activationPoint)
+    return Number(numerator) / 1e9
   }
 
   swap(

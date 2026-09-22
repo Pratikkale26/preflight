@@ -34,6 +34,15 @@ export interface AgentContext {
   /** Seconds since the launch opened. */
   readonly elapsedSeconds: bigint
   readonly isCurveComplete: boolean
+  /**
+   * The scheduled base fee a trade would pay right now, as a fraction.
+   *
+   * Published in the config account, so a trader can read it before deciding
+   * whether to trade. An agent that could not see it would be blinder than a
+   * real one rather than more conservative — and a fee schedule whose whole
+   * purpose is to change behaviour would change nothing.
+   */
+  readonly baseFeeFraction: number
   /** The agent's own random stream. Never shared. */
   readonly random: Random
 }

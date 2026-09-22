@@ -65,6 +65,13 @@ export function runScenario(options: ScenarioOptions): Trace {
 
     // Collect intentions before executing any of them, so that no agent is
     // reacting to a trade made in the same round.
+    // Read once per round rather than per agent: every agent deciding in the
+    // same round is looking at the same moment.
+    const roundStart = clock.now()
+    const baseFeeFraction = pool.baseFeeFraction(
+      VirtualPool.currentPoint(options.config, roundStart),
+    )
+
     const proposals = options.participants
       .map(({ agent }, index) => {
         const random = streams.get(agent.id)!
@@ -75,6 +82,7 @@ export function runScenario(options: ScenarioOptions): Trace {
           clock: clock.now(),
           elapsedSeconds: clock.now().unixTimestamp - openedAt,
           isCurveComplete: pool.isCurveComplete,
+          baseFeeFraction,
           random,
         })
         return { agent, index, intent, randomPosition }

@@ -43,8 +43,9 @@ export const SCENARIOS: readonly Scenario[] = [
     label: 'Sniper',
     asks: 'Can a bot take the float in the first seconds and exit into everyone else?',
     behaviour:
-      'Four bots each buy a sixth of the raise at t=0, before anyone else, and sell the whole ' +
-      'position the moment it is worth 1.6× what it cost.',
+      'Four bots each buy a sixth of the raise before anyone else and sell the whole position ' +
+      'the moment it is worth 1.6× what it cost — but only while the fee is at or under 3%. ' +
+      'Above that they wait for the schedule to bring it down, or never come.',
     snipers: 4,
     whales: 0,
     organics: 10,
