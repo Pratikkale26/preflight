@@ -28,16 +28,32 @@ cross the migration price is rejected outright rather than part-filled.
 `pnpm replay` reproduces the committed launch offline. Given a pool address and
 an archival endpoint it replays any live pool: `pnpm replay <poolAddress>`.
 
-### One thing this caught
+### What this took to get right
 
-The first replay diverged from the sixth swap onwards. The cause was not the
-engine: two of the launch's transactions landed in the same slot, and ordering
-them by slot alone sequenced them arbitrarily. Trades replayed out of order
-price differently, and every swap after the mistake inherits it.
+The largest of these pools produced 4153 divergences on the first attempt. None
+of them were arithmetic.
 
-Ordering now uses the slot and the transaction's position within it. This is the
-kind of error that a simulator checked only against its own assumptions would
-never surface.
+Two of a launch's transactions can land in the same slot, and ordering them by
+slot alone sequences them arbitrarily — every swap after the mistake inherits
+it. One transaction can route through several pools, each emitting its own
+event, so a replay was counting strangers' trades against this pool's reserve.
+And a swap can be made _exact-out_, naming the amount wanted rather than the
+amount spent, which is a different calculation and reads the event's first
+parameter in the opposite role.
+
+Each of those is invisible to a simulator checked only against its own
+assumptions. They surfaced because the chain had already written down the right
+answer.
+
+### What is not covered yet
+
+The exponential fee scheduler and slot-based activation have no recording, so a
+pool using either is unverified rather than known-good.
+
+Where the engine cannot price a swap at all, the replay stops and says so
+rather than skipping it and reporting agreement on the rest. A replay that
+omits what it cannot handle and then claims no divergences is worse than one
+that fails, because it reads as a pass.
 
 ## Differential tests against the program
 
