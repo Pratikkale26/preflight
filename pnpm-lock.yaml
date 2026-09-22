@@ -77,6 +77,18 @@ importers:
         specifier: ^1.4.1
         version: 1.4.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
 
+  packages/metrics:
+    dependencies:
+      '@preflight/agents':
+        specifier: workspace:*
+        version: link:../agents
+      '@preflight/config':
+        specifier: workspace:*
+        version: link:../config
+      '@preflight/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@ampproject/remapping@2.3.0':
